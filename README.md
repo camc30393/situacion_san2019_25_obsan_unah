@@ -1,12 +1,6 @@
 # Dashboard · Panorama de la Seguridad Alimentaria y Nutricional en Honduras (2019–2025)
  
 <div align="center">
-[![Institución](https://img.shields.io/badge/UNAH-IIS%20%2F%20FCCSS-223A75?style=flat-square&labelColor=0C1E3A)](https://www.unah.edu.hn)
-[![OBSAN](https://img.shields.io/badge/OBSAN-Observatorio%20SAN-1BAEC7?style=flat-square&labelColor=0C1E3A)](https://obsan.unah.edu.hn)
-[![Versión](https://img.shields.io/badge/Dashboard-v1.0-FDBA13?style=flat-square&labelColor=0C1E3A)](.)
-[![Boletín](https://img.shields.io/badge/Boletín-v3%20%C2%B7%20abril%202026-85C6E4?style=flat-square&labelColor=0C1E3A)](.)
-[![Licencia](https://img.shields.io/badge/Licencia-CC%20BY--NC%204.0-green?style=flat-square)](LICENSE)
- 
 **Tablero interactivo de visualización de datos** que acompaña al Boletín Temático  
 *Situación de la Seguridad Alimentaria y Nutricional en Honduras, 2019–2025*  
 producido por el **OBSAN / IIS / FCCSS / UNAH**.
