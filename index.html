@@ -1,1 +1,2394 @@
- 
+ <!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="description" content="Dashboard interactivo del Observatorio en Seguridad Alimentaria y Nutricional (OBSAN-UNAH) que acompaña al documento sobre panorama de la SAN en Honduras 2019-2025.">
+<meta name="author" content="Christian Alexis Manzanares Cruz - OBSAN/IIS/UNAH">
+<title>Dashboard SAN Honduras 2019-2025 · OBSAN/UNAH</title>
+
+<!-- Fuentes -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,700;9..144,900&family=IBM+Plex+Sans:wght@300;400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+
+<!-- Bibliotecas -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/d3@7.8.5/dist/d3.min.js"></script>
+
+<style>
+/* ============ VARIABLES UNAH ============ */
+:root{
+  /* Paleta UNAH institucional */
+  --unah-azul: #223A75;
+  --unah-azul-oscuro: #0C1E3A;
+  --unah-dorado: #FDBA13;
+  --unah-cian: #1BAEC7;
+  --unah-celeste: #85C6E4;
+  --unah-gris: #5C5858;
+
+  /* Tema claro (default) */
+  --bg: #FAF7F2;
+  --bg-card: #FFFFFF;
+  --bg-soft: #F2EEE5;
+  --bg-elev: #FFFFFF;
+  --ink: #0C1E3A;
+  --ink-soft: #3A4A66;
+  --ink-mute: #6B7588;
+  --line: rgba(12, 30, 58, 0.10);
+  --line-soft: rgba(12, 30, 58, 0.05);
+  --primary: #223A75;
+  --primary-soft: #3F5BA0;
+  --accent: #C9920F;
+  --accent-bright: #FDBA13;
+  --secondary: #1090A8;
+  --secondary-bright: #1BAEC7;
+  --shadow-sm: 0 1px 2px rgba(12,30,58,.06), 0 0 0 1px rgba(12,30,58,.04);
+  --shadow-md: 0 6px 24px -10px rgba(12,30,58,.18), 0 0 0 1px rgba(12,30,58,.06);
+
+  /* Paleta CIF oficial */
+  --cif-1: #CDFACD;
+  --cif-2: #FAE61E;
+  --cif-3: #E67800;
+  --cif-4: #C80000;
+  --cif-5: #640000;
+
+  /* Tipografía */
+  --f-display: "Fraunces", Georgia, serif;
+  --f-body: "IBM Plex Sans", -apple-system, system-ui, sans-serif;
+  --f-mono: "IBM Plex Mono", "SFMono-Regular", Consolas, monospace;
+}
+
+[data-theme="dark"]{
+  --bg: #0F1729;
+  --bg-card: #18223A;
+  --bg-soft: #1F2A45;
+  --bg-elev: #1F2A45;
+  --ink: #F1ECDF;
+  --ink-soft: #C9D1E0;
+  --ink-mute: #8995AC;
+  --line: rgba(241,236,223,0.12);
+  --line-soft: rgba(241,236,223,0.06);
+  --primary: #6B89C7;
+  --primary-soft: #5B7BC9;
+  --accent: #FDBA13;
+  --accent-bright: #FFD25A;
+  --secondary: #5DD5E8;
+  --secondary-bright: #85E0F0;
+  --shadow-sm: 0 1px 2px rgba(0,0,0,.4), 0 0 0 1px rgba(241,236,223,.06);
+  --shadow-md: 0 8px 32px -8px rgba(0,0,0,.5), 0 0 0 1px rgba(241,236,223,.08);
+}
+
+/* ============ RESET ============ */
+*,*::before,*::after{box-sizing:border-box}
+html{scroll-behavior:smooth;scroll-padding-top:120px}
+body{
+  margin:0; padding:0;
+  font-family: var(--f-body);
+  font-size: 15px;
+  line-height: 1.55;
+  color: var(--ink);
+  background: var(--bg);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+  transition: background .3s ease, color .3s ease;
+}
+img{max-width:100%;display:block}
+a{color:inherit;text-decoration:none}
+button{font:inherit;cursor:pointer;border:none;background:none;color:inherit}
+
+/* ============ HEADER ============ */
+.site-header{
+  background: linear-gradient(135deg, var(--unah-azul) 0%, var(--unah-azul-oscuro) 100%);
+  color:#FAF7F2;
+  padding: 28px 0 88px;
+  position: relative;
+  overflow:hidden;
+}
+.site-header::before{
+  content:'';
+  position:absolute; inset:0;
+  background:
+    radial-gradient(circle at 12% 30%, rgba(253,186,19,.10), transparent 35%),
+    radial-gradient(circle at 88% 70%, rgba(27,174,199,.12), transparent 40%);
+  pointer-events:none;
+}
+.container{
+  max-width: 1320px;
+  margin: 0 auto;
+  padding: 0 clamp(16px, 3vw, 32px);
+  position:relative;
+}
+.crest{
+  display:flex; align-items:center; gap:14px;
+  font-size:11px; letter-spacing:.18em; text-transform:uppercase;
+  color: rgba(250,247,242,.72);
+  font-weight:500;
+  margin-bottom: 14px;
+}
+.crest-mark{
+  width: 90px; height: 38px;
+  border-radius: 4px;
+  background: var(--unah-dorado);
+  color: var(--unah-azul-oscuro);
+  display:grid; place-items:center;
+  font-family: var(--f-display); font-weight:900; font-size: 22px;
+  font-style: italic;
+  letter-spacing: 0;
+}
+.crest-text{ display:flex; flex-direction:column; gap:2px; line-height:1.2 }
+.crest-text b{ color:#FAF7F2; font-weight:600; letter-spacing:.06em }
+.site-title{
+  font-family: var(--f-display);
+  font-weight: 500;
+  font-size: clamp(28px, 4vw, 46px);
+  line-height: 1.05;
+  margin: 8px 0 6px;
+  letter-spacing: -0.015em;
+  font-variation-settings: "opsz" 144, "SOFT" 0;
+}
+.site-title em{ font-style: italic; color: var(--unah-dorado); font-weight: 500 }
+.site-sub{
+  font-size: 15px;
+  max-width: 720px;
+  color: rgba(250,247,242,.86);
+  margin-bottom: 22px;
+  line-height: 1.55;
+}
+.site-meta{
+  display:flex; flex-wrap:wrap; gap: 8px 18px;
+  font-size: 12px;
+  font-family: var(--f-mono);
+  color: rgba(250,247,242,.72);
+  letter-spacing: .02em;
+}
+.site-meta span::before{ content:'· '; color: var(--unah-dorado); margin-right:4px }
+.site-meta span:first-child::before{ content:''; margin-right:0 }
+.header-actions{
+  position:absolute;
+  top: 28px; right: clamp(16px, 3vw, 32px);
+  display:flex; gap: 8px;
+  z-index: 5;
+}
+.icon-btn{
+  width: 38px; height: 38px;
+  border-radius: 8px;
+  background: rgba(255,255,255,.10);
+  border: 1px solid rgba(255,255,255,.14);
+  color: #FAF7F2;
+  display: grid; place-items:center;
+  transition: all .2s ease;
+}
+.icon-btn:hover{ background: rgba(255,255,255,.20); transform: translateY(-1px) }
+.icon-btn svg{ width:18px; height:18px; fill: currentColor }
+
+/* ============ NAV STICKY ============ */
+.site-nav{
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  background: var(--bg-card);
+  border-bottom: 1px solid var(--line);
+  margin-top: -56px;
+  border-radius: 12px 12px 0 0;
+  box-shadow: var(--shadow-md);
+}
+.site-nav-inner{
+  max-width: 1320px;
+  margin: 0 auto;
+  padding: 0 clamp(16px, 3vw, 32px);
+  display:flex; align-items:center; gap: 4px;
+  overflow-x: auto;
+  scrollbar-width: thin;
+}
+.nav-link{
+  padding: 16px 14px;
+  color: var(--ink-soft);
+  font-size: 13px;
+  font-weight: 500;
+  letter-spacing: .01em;
+  white-space: nowrap;
+  border-bottom: 2px solid transparent;
+  transition: all .2s ease;
+  position: relative;
+}
+.nav-link:hover{ color: var(--primary) }
+.nav-link.active{
+  color: var(--primary);
+  border-bottom-color: var(--accent-bright);
+}
+.nav-num{
+  font-family: var(--f-mono);
+  font-size: 10px;
+  color: var(--ink-mute);
+  font-weight: 500;
+  margin-right: 6px;
+  letter-spacing: 0.05em;
+}
+
+/* ============ MAIN ============ */
+main{
+  background: var(--bg-card);
+  border-radius: 0;
+  position: relative;
+  z-index: 2;
+}
+.section{
+  padding: 56px 0 32px;
+  border-bottom: 1px solid var(--line-soft);
+  scroll-margin-top: 80px;
+}
+.section:last-of-type{ border-bottom: none }
+.section-head{
+  margin-bottom: 28px;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 4px;
+  max-width: 920px;
+}
+.section-num{
+  font-family: var(--f-mono);
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--accent);
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+}
+.section-title{
+  font-family: var(--f-display);
+  font-weight: 500;
+  font-size: clamp(24px, 3vw, 34px);
+  line-height: 1.1;
+  margin: 4px 0 8px;
+  letter-spacing: -0.015em;
+  color: var(--ink);
+}
+.section-lead{
+  font-size: 16px;
+  color: var(--ink-soft);
+  line-height: 1.6;
+  font-weight: 400;
+}
+.section-tools{
+  display:flex; gap:6px; align-items:center;
+  margin-top: 14px;
+  flex-wrap: wrap;
+}
+.btn-tool{
+  display: inline-flex; align-items:center; gap:6px;
+  padding: 6px 12px;
+  font-size: 12px;
+  font-family: var(--f-mono);
+  background: var(--bg-soft);
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  color: var(--ink-soft);
+  transition: all .15s ease;
+  letter-spacing: 0.02em;
+}
+.btn-tool:hover{ background: var(--primary); color: #FAF7F2; border-color: var(--primary) }
+.btn-tool svg{ width:13px; height:13px; fill: currentColor }
+
+/* ============ KPI GRID ============ */
+.kpi-grid{
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 14px;
+  margin-bottom: 32px;
+}
+.kpi{
+  background: var(--bg-card);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 18px 18px 16px;
+  position: relative;
+  overflow: hidden;
+  transition: transform .2s ease, box-shadow .2s ease;
+}
+.kpi::before{
+  content: '';
+  position: absolute;
+  left: 0; top: 0; bottom: 0;
+  width: 3px;
+  background: var(--accent-bright);
+}
+.kpi.kpi-alert::before{ background: var(--cif-3) }
+.kpi.kpi-warn::before{ background: var(--cif-4) }
+.kpi.kpi-good::before{ background: var(--secondary) }
+.kpi:hover{ transform: translateY(-2px); box-shadow: var(--shadow-md) }
+.kpi-label{
+  font-size: 11px;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: .14em;
+  color: var(--ink-mute);
+  margin-bottom: 6px;
+  display:flex; align-items: baseline; justify-content: space-between; gap: 8px;
+}
+.kpi-period{
+  font-family: var(--f-mono);
+  font-size: 10px;
+  color: var(--ink-mute);
+  letter-spacing: 0;
+  text-transform: none;
+  font-weight: 400;
+}
+.kpi-value{
+  font-family: var(--f-display);
+  font-weight: 500;
+  font-size: 32px;
+  line-height: 1;
+  color: var(--ink);
+  margin-bottom: 4px;
+  letter-spacing: -0.02em;
+  font-variation-settings: "opsz" 144;
+}
+.kpi-unit{
+  font-family: var(--f-mono);
+  font-size: 13px;
+  color: var(--ink-soft);
+  margin-left: 4px;
+  font-weight: 400;
+}
+.kpi-desc{
+  font-size: 12px;
+  color: var(--ink-soft);
+  line-height: 1.45;
+  margin-top: 6px;
+}
+.kpi-source{
+  font-size: 10.5px;
+  font-family: var(--f-mono);
+  color: var(--ink-mute);
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px dashed var(--line);
+  letter-spacing: 0.02em;
+}
+
+/* ============ CHART CARDS ============ */
+.chart-grid{
+  display: grid;
+  grid-template-columns: repeat(12, 1fr);
+  gap: 20px;
+  margin-bottom: 24px;
+}
+.chart-card{
+  grid-column: span 12;
+  background: var(--bg-card);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 20px 22px 22px;
+  display: flex;
+  flex-direction: column;
+  min-height: 200px;
+}
+.chart-card.col-6{ grid-column: span 6 }
+.chart-card.col-8{ grid-column: span 8 }
+.chart-card.col-4{ grid-column: span 4 }
+.chart-card.col-7{ grid-column: span 7 }
+.chart-card.col-5{ grid-column: span 5 }
+@media (max-width: 980px){
+  .chart-card.col-6, .chart-card.col-8, .chart-card.col-4,
+  .chart-card.col-7, .chart-card.col-5 { grid-column: span 12 }
+}
+.chart-head{
+  margin-bottom: 14px;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.chart-head-text{ flex: 1; min-width: 200px }
+.chart-title{
+  font-family: var(--f-display);
+  font-weight: 500;
+  font-size: 19px;
+  line-height: 1.2;
+  margin: 0 0 4px;
+  color: var(--ink);
+  letter-spacing: -0.01em;
+}
+.chart-sub{
+  font-size: 12.5px;
+  color: var(--ink-soft);
+  line-height: 1.4;
+}
+.chart-period{
+  font-family: var(--f-mono);
+  font-size: 10.5px;
+  color: var(--accent);
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  background: rgba(253,186,19,.12);
+  padding: 4px 8px;
+  border-radius: 4px;
+  white-space: nowrap;
+  align-self: flex-start;
+}
+.chart-area{
+  position: relative;
+  flex: 1;
+  min-height: 280px;
+}
+.chart-area canvas{ max-width: 100% }
+.chart-foot{
+  margin-top: 12px;
+  padding-top: 10px;
+  border-top: 1px dashed var(--line);
+  font-size: 11.5px;
+  font-family: var(--f-mono);
+  color: var(--ink-mute);
+  line-height: 1.5;
+  letter-spacing: 0.01em;
+}
+.chart-foot strong{ color: var(--ink-soft); font-weight: 500 }
+
+/* ============ TOGGLES ============ */
+.toggle-row{
+  display: inline-flex;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--bg-soft);
+  padding: 3px;
+  margin-bottom: 14px;
+  font-size: 12px;
+}
+.toggle-btn{
+  padding: 6px 12px;
+  border-radius: 6px;
+  font-weight: 500;
+  color: var(--ink-soft);
+  font-family: var(--f-mono);
+  letter-spacing: 0.02em;
+  transition: all .15s ease;
+}
+.toggle-btn.active{
+  background: var(--primary);
+  color: #FAF7F2;
+}
+
+/* ============ MAPA ============ */
+.map-wrap{ display: none }
+.map-wrap.active{ display: block }
+.bars-wrap{ display: none }
+.bars-wrap.active{ display: block }
+.honduras-svg{
+  width: 100%;
+  height: auto;
+  max-height: 480px;
+  display: block;
+}
+.honduras-svg path{
+  stroke: var(--bg-card);
+  stroke-width: 1.2;
+  cursor: pointer;
+  transition: filter .15s ease, stroke-width .15s;
+}
+.honduras-svg path:hover{
+  stroke: var(--ink);
+  stroke-width: 2;
+  filter: brightness(1.05);
+}
+.map-tooltip{
+  position: absolute;
+  background: var(--unah-azul-oscuro);
+  color: #FAF7F2;
+  padding: 8px 12px;
+  border-radius: 6px;
+  font-size: 12px;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity .15s;
+  z-index: 100;
+  box-shadow: 0 4px 16px rgba(0,0,0,.3);
+  max-width: 220px;
+}
+.map-tooltip strong{ color: var(--unah-dorado); font-weight: 600 }
+.map-tooltip .tt-meta{ font-family: var(--f-mono); font-size: 10.5px; color: rgba(255,255,255,.7); margin-top: 4px }
+
+.cif-legend{
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-top: 12px;
+  font-size: 11.5px;
+  font-family: var(--f-mono);
+  color: var(--ink-soft);
+}
+.cif-legend span{
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+.cif-swatch{
+  width: 14px; height: 14px;
+  border-radius: 3px;
+  border: 1px solid var(--line);
+  display: inline-block;
+}
+
+/* ============ TABLAS ============ */
+.data-table{
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+  margin-top: 8px;
+}
+.data-table th{
+  background: var(--unah-azul);
+  color: #FAF7F2;
+  padding: 10px 12px;
+  text-align: left;
+  font-weight: 500;
+  font-size: 11.5px;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+.data-table th.num, .data-table td.num{
+  text-align: right;
+  font-family: var(--f-mono);
+}
+.data-table tr:nth-child(even) td{ background: var(--bg-soft) }
+.data-table td{
+  padding: 9px 12px;
+  border-bottom: 1px solid var(--line-soft);
+}
+.data-table tr:hover td{ background: rgba(253,186,19,.08) }
+.cif-cell{
+  display:inline-block; width:18px; height:18px;
+  border-radius:3px; vertical-align: middle;
+  margin-right: 6px; border:1px solid var(--line);
+}
+
+.scroll-table{
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* ============ NOTAS ANALÍTICAS ============ */
+.callout{
+  border-left: 3px solid var(--accent-bright);
+  padding: 14px 18px;
+  background: rgba(253,186,19,.06);
+  border-radius: 0 8px 8px 0;
+  margin: 16px 0 24px;
+  font-size: 14px;
+  color: var(--ink-soft);
+  line-height: 1.6;
+}
+.callout.alert{ border-color: var(--cif-4); background: rgba(200,0,0,.05) }
+.callout strong{ color: var(--ink); font-weight: 600 }
+
+/* ============ FOOTER ============ */
+.site-footer{
+  background: var(--unah-azul-oscuro);
+  color: rgba(250,247,242,.86);
+  padding: 36px 0 28px;
+  font-size: 13px;
+}
+.footer-grid{
+  display: grid;
+  grid-template-columns: 2fr 1fr 1fr;
+  gap: 32px;
+  margin-bottom: 24px;
+}
+@media (max-width: 720px){ .footer-grid{ grid-template-columns: 1fr } }
+.footer-grid h4{
+  font-family: var(--f-display);
+  font-weight: 500;
+  font-size: 16px;
+  margin: 0 0 10px;
+  color: #FAF7F2;
+  letter-spacing: -0.01em;
+}
+.footer-grid p, .footer-grid li{ line-height: 1.55; margin: 0 0 6px }
+.footer-grid ul{ list-style: none; padding: 0; margin: 0 }
+.footer-grid a:hover{ color: var(--unah-dorado) }
+.footer-bottom{
+  border-top: 1px solid rgba(250,247,242,.12);
+  padding-top: 16px;
+  font-family: var(--f-mono);
+  font-size: 11px;
+  color: rgba(250,247,242,.6);
+  display:flex; justify-content: space-between; flex-wrap: wrap; gap:10px;
+  letter-spacing: 0.02em;
+}
+
+/* ============ REFERENCIAS ============ */
+.refs-list{
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: grid;
+  gap: 10px;
+}
+.refs-list li{
+  font-size: 13px;
+  line-height: 1.55;
+  padding: 10px 14px;
+  background: var(--bg-soft);
+  border-radius: 6px;
+  color: var(--ink-soft);
+  border-left: 3px solid var(--secondary);
+  text-indent: -1.4em;
+  padding-left: 2em;
+}
+.refs-list li b{ color: var(--ink); font-weight: 600 }
+
+/* ============ ACORDEÓN DE REFERENCIAS ============ */
+.refs-accordion{
+  display: grid;
+  gap: 10px;
+}
+.acc-controls{
+  display: flex;
+  gap: 6px;
+  margin-bottom: 18px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+.acc-controls .acc-summary{
+  font-family: var(--f-mono);
+  font-size: 11.5px;
+  color: var(--ink-mute);
+  letter-spacing: 0.02em;
+  margin-left: auto;
+}
+.acc-panel{
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--bg-card);
+  overflow: hidden;
+  transition: box-shadow .2s ease, border-color .2s ease;
+}
+.acc-panel.is-open{
+  box-shadow: var(--shadow-sm);
+  border-color: rgba(34, 58, 117, 0.30);
+}
+[data-theme="dark"] .acc-panel.is-open{
+  border-color: rgba(107, 137, 199, 0.45);
+}
+.acc-head{
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  width: 100%;
+  padding: 14px 18px;
+  background: transparent;
+  text-align: left;
+  cursor: pointer;
+  transition: background .15s ease;
+  border-radius: 10px;
+}
+.acc-head:hover{ background: var(--bg-soft) }
+.acc-head:focus-visible{
+  outline: 2px solid var(--accent-bright);
+  outline-offset: -2px;
+}
+.acc-icon{
+  width: 36px; height: 36px;
+  border-radius: 7px;
+  display: grid; place-items: center;
+  background: var(--bg-soft);
+  color: var(--primary);
+  flex-shrink: 0;
+  font-family: var(--f-display);
+  font-weight: 700;
+  font-size: 13px;
+  font-style: italic;
+  letter-spacing: -0.02em;
+  border: 1px solid var(--line);
+  transition: background .2s ease, color .2s ease;
+}
+.acc-panel.is-open .acc-icon{
+  background: var(--unah-azul);
+  color: var(--unah-dorado);
+  border-color: var(--unah-azul);
+}
+[data-theme="dark"] .acc-panel.is-open .acc-icon{
+  background: var(--unah-dorado);
+  color: var(--unah-azul-oscuro);
+  border-color: var(--unah-dorado);
+}
+.acc-titles{
+  flex: 1; min-width: 0;
+  display: flex; flex-direction: column; gap: 2px;
+}
+.acc-title{
+  font-family: var(--f-display);
+  font-size: 17px;
+  font-weight: 500;
+  color: var(--ink);
+  letter-spacing: -0.005em;
+  line-height: 1.2;
+}
+.acc-sub{
+  font-size: 12px;
+  color: var(--ink-mute);
+  font-weight: 400;
+  line-height: 1.3;
+}
+.acc-count{
+  font-family: var(--f-mono);
+  font-size: 11px;
+  color: var(--ink-mute);
+  letter-spacing: 0.04em;
+  white-space: nowrap;
+  background: var(--bg-soft);
+  padding: 4px 9px;
+  border-radius: 4px;
+  border: 1px solid var(--line);
+}
+.acc-panel.is-open .acc-count{
+  color: var(--primary);
+  background: rgba(34, 58, 117, 0.08);
+  border-color: rgba(34, 58, 117, 0.18);
+}
+[data-theme="dark"] .acc-panel.is-open .acc-count{
+  color: var(--accent-bright);
+  background: rgba(253, 186, 19, 0.10);
+  border-color: rgba(253, 186, 19, 0.24);
+}
+.acc-chevron{
+  width: 18px; height: 18px;
+  color: var(--ink-mute);
+  transition: transform .25s ease, color .2s ease;
+  flex-shrink: 0;
+}
+.acc-panel.is-open .acc-chevron{
+  transform: rotate(180deg);
+  color: var(--primary);
+}
+.acc-body{
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height .35s cubic-bezier(.2,.6,.2,1);
+}
+.acc-panel.is-open .acc-body{ max-height: 6000px }
+.acc-refs{
+  list-style: none;
+  margin: 0;
+  padding: 6px 18px 18px;
+  display: grid;
+  gap: 8px;
+  counter-reset: acc-ref;
+}
+.acc-refs li{
+  position: relative;
+  font-size: 13px;
+  line-height: 1.55;
+  padding: 10px 14px 10px 38px;
+  background: var(--bg-soft);
+  border-radius: 6px;
+  color: var(--ink-soft);
+  border-left: 3px solid var(--secondary);
+  counter-increment: acc-ref;
+}
+.acc-refs li::before{
+  content: counter(acc-ref);
+  position: absolute;
+  left: 12px; top: 10px;
+  font-family: var(--f-mono);
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--accent);
+  width: 18px;
+  letter-spacing: 0;
+}
+.acc-refs li b{ color: var(--ink); font-weight: 600 }
+.acc-refs li a{
+  font-family: var(--f-mono);
+  font-size: 11px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  margin-left: 4px;
+  padding: 1px 6px;
+  border-radius: 3px;
+  border: 1px solid currentColor;
+  white-space: nowrap;
+}
+.acc-refs li a:hover{ background: rgba(253, 186, 19, 0.14) }
+@media (max-width: 600px){
+  .acc-head{ gap: 10px; padding: 12px 14px }
+  .acc-title{ font-size: 15px }
+  .acc-sub{ display: none }
+  .acc-icon{ width: 30px; height: 30px; font-size: 11px }
+}
+
+/* ============ PRINT ============ */
+@media print{
+  @page{ size: letter; margin: 1.6cm }
+  body{ background: white; font-size: 10pt }
+  .site-header{ background: var(--unah-azul) !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; padding: 12pt 0 14pt }
+  .site-nav, .header-actions, .section-tools, .toggle-row, .btn-tool{ display: none !important }
+  .section{ break-inside: avoid; padding: 18pt 0 12pt }
+  .chart-card{ break-inside: avoid; box-shadow: none; border: 1px solid #ccc }
+  .chart-area{ min-height: 200px }
+  .kpi-grid{ grid-template-columns: repeat(4, 1fr); gap: 8pt }
+  .kpi{ break-inside: avoid; box-shadow: none }
+  .site-footer{ background: white; color: black; border-top: 2px solid var(--unah-azul) }
+  .acc-controls{ display: none !important }
+  .acc-panel{ break-inside: avoid; border: 1px solid #ccc !important; box-shadow: none !important }
+  .acc-body{ max-height: none !important; overflow: visible !important }
+  .acc-chevron{ display: none !important }
+  .acc-panel .acc-icon{ background: var(--unah-azul) !important; color: var(--unah-dorado) !important; -webkit-print-color-adjust: exact; print-color-adjust: exact }
+}
+
+/* ============ MOTION ============ */
+@media (prefers-reduced-motion: reduce){
+  *, *::before, *::after{
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* ============ RESPONSIVE ============ */
+@media (max-width: 720px){
+  .section{ padding: 36px 0 20px }
+  .kpi-value{ font-size: 26px }
+  .header-actions{ top: 20px }
+  .nav-link{ padding: 14px 10px; font-size: 12px }
+  .nav-num{ display: none }
+}
+</style>
+</head>
+<body>
+
+<!-- ===================== HEADER ===================== -->
+<header class="site-header">
+  <div class="container">
+    <div class="header-actions">
+      <button class="icon-btn" id="btn-theme" title="Alternar tema claro/oscuro" aria-label="Alternar tema">
+        <svg viewBox="0 0 24 24"><path d="M12 3v2m0 14v2M5.6 5.6l1.4 1.4m10 10l1.4 1.4M3 12h2m14 0h2M5.6 18.4l1.4-1.4m10-10l1.4-1.4" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round"/><circle cx="12" cy="12" r="4" fill="currentColor"/></svg>
+      </button>
+      <button class="icon-btn" id="btn-print" title="Imprimir / exportar a PDF (carta)" aria-label="Imprimir">
+        <svg viewBox="0 0 24 24"><path d="M6 9V3h12v6M6 18H4a2 2 0 01-2-2v-5a2 2 0 012-2h16a2 2 0 012 2v5a2 2 0 01-2 2h-2M6 14h12v8H6z" stroke="currentColor" stroke-width="2" fill="none" stroke-linejoin="round"/></svg>
+      </button>
+    </div>
+    <div class="crest">
+      <div class="crest-mark">CAMC</div>
+      <div class="crest-text">
+        <span><b>UNAH</b> · Facultad de Ciencias Sociales</span>
+        <span>Instituto de Investigaciones Sociales · OBSAN</span>
+      </div>
+    </div>
+    <h1 class="site-title"><em>Dashboard<br></em>Panorama de la Seguridad Alimentaria y Nutricional<br>en Honduras, <em>2019&ndash;2025</em></h1>
+    <p class="site-sub">El dashboard acompaña al documento <em>XXX</em> del Observatorio en Seguridad Alimentaria y Nutricional (OBSAN). Sintetiza la evolución macroeconómica, la inseguridad alimentaria aguda (CIF), la disponibilidad y precios, la estructura del sector agroalimentario y los indicadores de utilización biológica.</p>
+    <div class="site-meta">
+      <span>Período: 2019&ndash;2025</span>
+      <span>Cobertura: nacional, departamental, urbano/rural</span>
+      <span id="meta-updated">Actualizado: 2026-04-26</span>
+    </div>
+  </div>
+</header>
+
+<!-- ===================== NAV STICKY ===================== -->
+<nav class="site-nav" aria-label="Secciones del dashboard">
+  <div class="site-nav-inner">
+    <a class="nav-link" href="#resumen"><span class="nav-num">01</span>Resumen</a>
+    <a class="nav-link" href="#macro"><span class="nav-num">02</span>Macroeconomía</a>
+    <a class="nav-link" href="#cif"><span class="nav-num">03</span>InSan CIF</a>
+    <a class="nav-link" href="#produccion"><span class="nav-num">04</span>Producción y precios</a>
+    <a class="nav-link" href="#estructura"><span class="nav-num">05</span>Estructura productiva</a>
+    <a class="nav-link" href="#nutricion"><span class="nav-num">06</span>Nutrición</a>
+    <a class="nav-link" href="#fuentes"><span class="nav-num">07</span>Fuentes</a>
+  </div>
+</nav
+
+<main>
+  <div class="container">
+
+  <!-- ============ 01 RESUMEN ============ -->
+  <section class="section" id="resumen">
+    <div class="section-head">
+      <span class="section-num">01 — Resumen ejecutivo</span>
+      <h2 class="section-title">Indicadores clave 2019&ndash;2025</h2>
+      <p class="section-lead">Honduras enfrenta una inseguridad alimentaria estructural que el sexenio reciente profundizó por la convergencia de la pandemia, los huracanes Eta e Iota, la inflación alimentaria global y la tormenta Sara. Estos indicadores sintetizan la magnitud actual.</p>
+    </div>
+    <div class="kpi-grid" id="kpi-resumen"></div>
+  </section>
+
+  <!-- ============ 02 MACROECONOMÍA ============ -->
+  <section class="section" id="macro">
+    <div class="section-head">
+      <span class="section-num">02 — Panorama macroeconómico y acceso económico</span>
+      <h2 class="section-title">Crecimiento, remesas y poder adquisitivo alimentario</h2>
+      <p class="section-lead">El crecimiento del producto se recuperó tras la contracción de 2020, pero no se ha traducido en mejoras proporcionales del bienestar alimentario. Las remesas se duplicaron y la canasta básica creció más rápido que el salario mínimo.</p>
+      <div class="section-tools">
+        <button class="btn-tool" data-csv="macro" data-csv-name="OBSAN_macro_2019_2025"><svg viewBox="0 0 24 24"><path d="M12 3v12m0 0l-4-4m4 4l4-4M5 21h14" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round"/></svg>Descargar CSV</button>
+      </div>
+    </div>
+
+    <div class="chart-grid">
+      <div class="chart-card col-6">
+        <div class="chart-head">
+          <div class="chart-head-text">
+            <h3 class="chart-title">Crecimiento del PIB real</h3>
+            <p class="chart-sub">Variación porcentual anual</p>
+          </div>
+          <span class="chart-period">2019–2024</span>
+        </div>
+        <div class="chart-area"><canvas id="ch-pib" data-png="OBSAN_PIB_2019_2024"></canvas></div>
+        <div class="chart-foot"><strong>Fuente:</strong> BCH (Memoria 2024); CEPAL, Estudio Económico ALC 2020 y 2023; Banco Mundial (2024).</div>
+      </div>
+
+      <div class="chart-card col-6">
+        <div class="chart-head">
+          <div class="chart-head-text">
+            <h3 class="chart-title">Remesas familiares</h3>
+            <p class="chart-sub">Millones de USD y porcentaje aproximado del PIB</p>
+          </div>
+          <span class="chart-period">2019–2025</span>
+        </div>
+        <div class="chart-area"><canvas id="ch-remesas" data-png="OBSAN_remesas_2019_2025"></canvas></div>
+        <div class="chart-foot"><strong>Fuente:</strong> BCH (2025c, 2026), Remesas familiares corrientes; cálculo OBSAN.</div>
+      </div>
+
+      <div class="chart-card col-7">
+        <div class="chart-head">
+          <div class="chart-head-text">
+            <h3 class="chart-title">CBA, CBS urbana y salario mínimo</h3>
+            <p class="chart-sub">Lempiras por persona/mes (CBA, CBS) y promedio mensual (salario)</p>
+          </div>
+          <span class="chart-period">2019–2025</span>
+        </div>
+        <div class="chart-area"><canvas id="ch-cba" data-png="OBSAN_CBA_salario_2019_2025"></canvas></div>
+        <div class="chart-foot"><strong>Fuente:</strong> OBSAN (2026), Serie de precios y costo de la canasta básica, con datos del INE y BCH. Sin datos para 2020 ni 2022.</div>
+      </div>
+
+      <div class="chart-card col-5">
+        <div class="chart-head">
+          <div class="chart-head-text">
+            <h3 class="chart-title">Inflación interanual</h3>
+            <p class="chart-sub">IPC general y componente alimentos y bebidas</p>
+          </div>
+          <span class="chart-period">2019–2024</span>
+        </div>
+        <div class="chart-area"><canvas id="ch-inflacion" data-png="OBSAN_inflacion_2019_2024"></canvas></div>
+        <div class="chart-foot"><strong>Fuente:</strong> BCH, Índice de Precios al Consumidor (varios años).</div>
+      </div>
+
+      <div class="chart-card col-7">
+        <div class="chart-head">
+          <div class="chart-head-text">
+            <h3 class="chart-title">Pobreza y pobreza extrema (hogares)</h3>
+            <p class="chart-sub">Porcentaje del total de hogares — método de línea de pobreza</p>
+          </div>
+          <span class="chart-period">2019–2024</span>
+        </div>
+        <div class="chart-area"><canvas id="ch-pobreza" data-png="OBSAN_pobreza_2019_2024"></canvas></div>
+        <div class="chart-foot"><strong>Fuente:</strong> INE, Boletín de pobreza 2024, EPHPM; series oficiales 2019–2024. EPHPM no se levantó en 2020.</div>
+      </div>
+
+      <div class="chart-card col-5">
+        <div class="chart-head">
+          <div class="chart-head-text">
+            <h3 class="chart-title">Estructura del gasto del hogar</h3>
+            <p class="chart-sub">Participación porcentual del gasto de consumo por dominio</p>
+          </div>
+          <span class="chart-period">ENIGH 2023–2024</span>
+        </div>
+        <div class="chart-area"><canvas id="ch-gasto" data-png="OBSAN_estructura_gasto_2023_2024"></canvas></div>
+        <div class="chart-foot"><strong>Fuente:</strong> BCH (2025a), Encuesta Nacional de Ingresos y Gastos de los Hogares 2023–2024, p.&nbsp;93. Excluye alquiler imputado.</div>
+      </div>
+    </div>
+
+    <div class="callout">
+      <strong>Lectura analítica:</strong> entre 2019 y 2025 la canasta básica alimentaria urbana creció 49&nbsp;% mientras el salario mínimo lo hizo 41&nbsp;%; los hogares del primer quintil gastan 57&nbsp;% más de lo que perciben (BCH, 2025a). Las remesas se duplicaron y representan 30&nbsp;% del PIB en 2025, pero no llegan a los hogares más pobres con la regularidad necesaria para amortiguar la erosión del acceso económico.
+    </div>
+  </section>
+
+  <!-- ============ 03 INSEGURIDAD ALIMENTARIA CIF ============ -->
+  <section class="section" id="cif">
+    <div class="section-head">
+      <span class="section-num">03 — Inseguridad alimentaria aguda (CIF)</span>
+      <h2 class="section-title">Clasificación Integrada en Fases, 2019&ndash;2025</h2>
+      <p class="section-lead">Tras el pico crítico de 2020&ndash;2021 (por la pandemia y los huracanes Eta e Iota), la severidad cedió sin disolver los focos persistentes en el corredor seco, La Mosquitia y zonas occidentales.</p>
+      <div class="section-tools">
+        <button class="btn-tool" data-csv="cif-serie" data-csv-name="OBSAN_CIF_serie_2019_2025"><svg viewBox="0 0 24 24"><path d="M12 3v12m0 0l-4-4m4 4l4-4M5 21h14" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round"/></svg>Serie histórica</button>
+        <button class="btn-tool" data-csv="cif-deptos" data-csv-name="OBSAN_CIF_deptos_dic2024_mar2025"><svg viewBox="0 0 24 24"><path d="M12 3v12m0 0l-4-4m4 4l4-4M5 21h14" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round"/></svg>Departamental</button>
+      </div>
+    </div>
+
+    <div class="chart-grid">
+      <div class="chart-card col-12">
+        <div class="chart-head">
+          <div class="chart-head-text">
+            <h3 class="chart-title">Distribución de la población por fase CIF</h3>
+            <p class="chart-sub">Proporción nacional según fase (1 mínima a 5 catástrofe)</p>
+          </div>
+          <span class="chart-period">2019–2025</span>
+        </div>
+        <div class="chart-area" style="min-height:340px"><canvas id="ch-cif-serie" data-png="OBSAN_CIF_serie_2019_2025"></canvas></div>
+        <div class="chart-foot"><strong>Fuente:</strong> SAG/UTSAN, Análisis CIF de Inseguridad Alimentaria Aguda, Honduras (2019, 2020, 2021, 2022, 2023, 2024, 2025).</div>
+      </div>
+
+      <div class="chart-card col-12">
+        <div class="chart-head">
+          <div class="chart-head-text">
+            <h3 class="chart-title">Distribución territorial de la población en Crisis o Emergencia (Fase 3+)</h3>
+            <p class="chart-sub">Análisis CIF: situación actual diciembre 2024 a marzo 2025</p>
+          </div>
+          <span class="chart-period">Dic 2024 – Mar 2025</span>
+        </div>
+
+        <div class="toggle-row" role="tablist">
+          <button class="toggle-btn active" data-view="map" aria-pressed="true">Mapa coroplético</button>
+          <button class="toggle-btn" data-view="bars" aria-pressed="false">Barras horizontales</button>
+        </div>
+
+        <div class="map-wrap active" id="map-wrap">
+          <div style="position:relative">
+            <svg id="hn-map" class="honduras-svg" viewBox="0 0 1000 600" preserveAspectRatio="xMidYMid meet" aria-label="Mapa de Honduras: Fase 3+ por departamento"></svg>
+            <div class="map-tooltip" id="map-tt"></div>
+          </div>
+          <div class="cif-legend">
+            <span><i class="cif-swatch" style="background:#CDFACD"></i>&lt; 15&nbsp;% (mín.)</span>
+            <span><i class="cif-swatch" style="background:#FAE61E"></i>15–19&nbsp;% (acent.)</span>
+            <span><i class="cif-swatch" style="background:#E67800"></i>20–29&nbsp;% (crisis)</span>
+            <span><i class="cif-swatch" style="background:#C80000"></i>30–49&nbsp;% (emerg.)</span>
+            <span><i class="cif-swatch" style="background:#640000"></i>≥ 50&nbsp;% (catástrofe)</span>
+          </div>
+        </div>
+
+        <div class="bars-wrap" id="bars-wrap">
+          <div class="chart-area" style="min-height:560px"><canvas id="ch-cif-deptos" data-png="OBSAN_CIF_deptos_2025"></canvas></div>
+        </div>
+
+        <div class="chart-foot"><strong>Fuente:</strong> SAG/UTSAN (2025), Informe del Análisis CIF de Inseguridad Alimentaria Aguda, Honduras 2019–2025; situación actual diciembre 2024 a marzo 2025. <strong>Nota:</strong> en el mapa, Francisco Morazán y Distrito Central aparecen como un solo polígono con el promedio ponderado por población. En las barras se mantienen disgregados.</div>
+      </div>
+    </div>
+
+    <div class="callout alert">
+      <strong>Departamentos críticos persistentes:</strong> Gracias a Dios (50&nbsp;% en F3+), Colón (25&nbsp;%), Atlántida (22&nbsp;%) y Cortés/El Progreso (21&nbsp;%) concentran la mayor severidad en el período diciembre 2024–marzo 2025. Cinco departamentos —Choluteca, La Paz, Lempira, Gracias a Dios y Santa Bárbara— se han mantenido en o cerca de Fase 3 año tras año, lo que indica la dimensión estructural del fenómeno.
+    </div>
+  </section>
+
+  <!-- ============ 04 PRODUCCIÓN Y PRECIOS ============ -->
+  <section class="section" id="produccion">
+    <div class="section-head">
+      <span class="section-num">04 — Disponibilidad: producción y precios</span>
+      <h2 class="section-title">Granos básicos: producción nacional y dinámicas de precio</h2>
+      <p class="section-lead">El maíz, frijol, arroz y sorgo configuran la dieta hondureña. La producción nacional muestra rendimientos rezagados y el comportamiento de precios refleja la transmisión de choques internacionales.</p>
+      <div class="section-tools">
+        <button class="btn-tool" data-csv="precios" data-csv-name="OBSAN_precios_granos_2019_2024"><svg viewBox="0 0 24 24"><path d="M12 3v12m0 0l-4-4m4 4l4-4M5 21h14" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round"/></svg>Descargar CSV</button>
+      </div>
+    </div>
+
+    <div class="chart-grid">
+      <div class="chart-card col-6">
+        <div class="chart-head">
+          <div class="chart-head-text">
+            <h3 class="chart-title">Producción de granos básicos</h3>
+            <p class="chart-sub">Producción (TM) y rendimiento (TM/ha)</p>
+          </div>
+          <span class="chart-period">CAN 2024 · año agrícola 2023–2024</span>
+        </div>
+        <div class="chart-area"><canvas id="ch-granos-prod" data-png="OBSAN_granos_produccion_CAN2024"></canvas></div>
+        <div class="chart-foot"><strong>Fuente:</strong> INE y SAG (2025), Censo Agropecuario Nacional 2024.</div>
+      </div>
+
+      <div class="chart-card col-6">
+        <div class="chart-head">
+          <div class="chart-head-text">
+            <h3 class="chart-title">Precios de granos básicos en mercado</h3>
+            <p class="chart-sub">Lempiras por libra, promedio anual</p>
+          </div>
+          <span class="chart-period">2019–2024</span>
+        </div>
+        <div class="chart-area"><canvas id="ch-precios" data-png="OBSAN_precios_granos_2019_2024"></canvas></div>
+        <div class="chart-foot"><strong>Fuente:</strong> OBSAN (2026), Serie de datos de precios de granos básicos.</div>
+      </div>
+
+      <div class="chart-card col-6">
+        <div class="chart-head">
+          <div class="chart-head-text">
+            <h3 class="chart-title">Concentración territorial de la producción</h3>
+            <p class="chart-sub">Distribución de explotaciones de granos básicos por departamento</p>
+          </div>
+          <span class="chart-period">CAN 2024</span>
+        </div>
+        <div class="chart-area"><canvas id="ch-concentracion" data-png="OBSAN_concentracion_granos_CAN2024"></canvas></div>
+        <div class="chart-foot"><strong>Fuente:</strong> INE y SAG (2025), CAN 2024, p.&nbsp;22.</div>
+      </div>
+
+      <div class="chart-card col-6">
+        <div class="chart-head">
+          <div class="chart-head-text">
+            <h3 class="chart-title">Variación acumulada de precios</h3>
+            <p class="chart-sub">Cambio porcentual respecto al precio promedio de 2019</p>
+          </div>
+          <span class="chart-period">Base 100 = 2019</span>
+        </div>
+        <div class="chart-area"><canvas id="ch-precios-indice" data-png="OBSAN_precios_indice_2019_2024"></canvas></div>
+        <div class="chart-foot"><strong>Fuente:</strong> Cálculo OBSAN (2026) con la Serie de precios de granos básicos.</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ 05 ESTRUCTURA PRODUCTIVA ============ -->
+  <section class="section" id="estructura">
+    <div class="section-head">
+      <span class="section-num">05 — Estructura productiva: hallazgos del CAN 2024</span>
+      <h2 class="section-title">Fotografía del sector agroalimentario tras 31 años</h2>
+      <p class="section-lead">El primer Censo Agropecuario Nacional desde 1993 evidencia un crecimiento extensivo del sector sin transformación cualitativa: Minifundismo, dependencia de la lluvia, baja tecnificación y envejecimiento de los productores.</p>
+      <div class="section-tools">
+        <button class="btn-tool" data-csv="can" data-csv-name="OBSAN_CAN_perfiles_2024"><svg viewBox="0 0 24 24"><path d="M12 3v12m0 0l-4-4m4 4l4-4M5 21h14" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round"/></svg>Descargar CSV</button>
+      </div>
+    </div>
+
+    <div class="kpi-grid" id="kpi-can"></div>
+
+    <div class="chart-grid">
+      <div class="chart-card col-7">
+        <div class="chart-head">
+          <div class="chart-head-text">
+            <h3 class="chart-title">Comparación 1993 vs 2024</h3>
+            <p class="chart-sub">Productores, explotaciones y área cultivada (hectáreas)</p>
+          </div>
+          <span class="chart-period">1993 ⟶ 2024</span>
+        </div>
+        <div class="chart-area"><canvas id="ch-comparacion" data-png="OBSAN_comparacion_1993_2024"></canvas></div>
+        <div class="chart-foot"><strong>Fuente:</strong> INE (1993), Censo Nacional Agropecuario; INE y SAG (2025), CAN 2024.</div>
+      </div>
+
+      <div class="chart-card col-5">
+        <div class="chart-head">
+          <div class="chart-head-text">
+            <h3 class="chart-title">Tenencia de la tierra</h3>
+            <p class="chart-sub">Distribución de las 2,748,054.8 ha registradas</p>
+          </div>
+          <span class="chart-period">CAN 2024</span>
+        </div>
+        <div class="chart-area"><canvas id="ch-tenencia" data-png="OBSAN_tenencia_tierra_CAN2024"></canvas></div>
+        <div class="chart-foot"><strong>Fuente:</strong> INE y SAG (2025), CAN 2024.</div>
+      </div>
+
+      <div class="chart-card col-4">
+        <div class="chart-head">
+          <div class="chart-head-text">
+            <h3 class="chart-title">Productores por sexo</h3>
+            <p class="chart-sub">Distribución porcentual</p>
+          </div>
+          <span class="chart-period">CAN 2024</span>
+        </div>
+        <div class="chart-area"><canvas id="ch-sexo" data-png="OBSAN_productores_sexo_CAN2024"></canvas></div>
+        <div class="chart-foot"><strong>Fuente:</strong> INE y SAG (2025), CAN 2024.</div>
+      </div>
+
+      <div class="chart-card col-4">
+        <div class="chart-head">
+          <div class="chart-head-text">
+            <h3 class="chart-title">Productores por grupo de edad</h3>
+            <p class="chart-sub">Pirámide etaria del productor agropecuario</p>
+          </div>
+          <span class="chart-period">CAN 2024</span>
+        </div>
+        <div class="chart-area"><canvas id="ch-edad" data-png="OBSAN_productores_edad_CAN2024"></canvas></div>
+        <div class="chart-foot"><strong>Fuente:</strong> INE y SAG (2025), CAN 2024, p.&nbsp;12.</div>
+      </div>
+
+      <div class="chart-card col-4">
+        <div class="chart-head">
+          <div class="chart-head-text">
+            <h3 class="chart-title">Nivel educativo del productor</h3>
+            <p class="chart-sub">Porcentaje sobre 408,965 productores</p>
+          </div>
+          <span class="chart-period">CAN 2024</span>
+        </div>
+        <div class="chart-area"><canvas id="ch-educacion" data-png="OBSAN_productores_educacion_CAN2024"></canvas></div>
+        <div class="chart-foot"><strong>Fuente:</strong> INE y SAG (2025), CAN 2024, p.&nbsp;15.</div>
+      </div>
+
+      <div class="chart-card col-12">
+        <div class="chart-head">
+          <div class="chart-head-text">
+            <h3 class="chart-title">Capacidades estructurales del sector agropecuario</h3>
+            <p class="chart-sub">Indicadores de modernización: riego, asistencia técnica, crédito, formalización</p>
+          </div>
+          <span class="chart-period">CAN 2024</span>
+        </div>
+        <div class="chart-area"><canvas id="ch-capacidades" data-png="OBSAN_capacidades_CAN2024"></canvas></div>
+        <div class="chart-foot"><strong>Fuente:</strong> INE y SAG (2025), CAN 2024. <strong>Lectura:</strong> apenas el 8.6&nbsp;% del área cultivada cuenta con riego; el 11.6&nbsp;% de los productores recibió asistencia técnica; sólo el 4.8&nbsp;% accedió a crédito durante el año censal.</div>
+      </div>
+    </div>
+
+    <div class="callout">
+      <strong>Crisis silenciosa del relevo generacional:</strong> el 24.3&nbsp;% de los productores tiene 60 años o más, mientras los menores de 25 representan apenas el 3.5&nbsp;%. Sumado a la baja escolaridad (29.3&nbsp;% sin nivel educativo) y la fuerte migración juvenil, configura un escenario donde la continuidad misma del sistema alimentario está en entredicho.
+    </div>
+  </section>
+
+  <!-- ============ 06 NUTRICIÓN ============ -->
+  <section class="section" id="nutricion">
+    <div class="section-head">
+      <span class="section-num">06 — Utilización biológica</span>
+      <h2 class="section-title">Indicadores antropométricos y patrones nutricionales</h2>
+      <p class="section-lead">La desnutrición crónica afecta a uno de cada cinco menores de 5 años, con brechas extremas por área, quintil de riqueza y departamento. La doble carga (desnutrición y sobrepeso/obesidad) caracteriza el escenario nutricional contemporáneo.</p>
+      <div class="section-tools">
+        <button class="btn-tool" data-csv="nutricion" data-csv-name="OBSAN_nutricion_ENDESA_2019"><svg viewBox="0 0 24 24"><path d="M12 3v12m0 0l-4-4m4 4l4-4M5 21h14" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round"/></svg>Descargar CSV</button>
+      </div>
+    </div>
+
+    <div class="chart-grid">
+      <div class="chart-card col-7">
+        <div class="chart-head">
+          <div class="chart-head-text">
+            <h3 class="chart-title">Desnutrición crónica en menores de 5 años</h3>
+            <p class="chart-sub">Retraso del crecimiento (talla/edad &lt; -2 DE) por categoría</p>
+          </div>
+          <span class="chart-period">ENDESA/MICS 2019</span>
+        </div>
+        <div class="chart-area"><canvas id="ch-cronica" data-png="OBSAN_desnutricion_cronica_ENDESA"></canvas></div>
+        <div class="chart-foot"><strong>Fuente:</strong> SCGG, SESAL, INE, EU, UNFPA y UNICEF (2021), Encuesta Nacional de Demografía y Salud, ENDESA/MICS 2019.</div>
+      </div>
+
+      <div class="chart-card col-5">
+        <div class="chart-head">
+          <div class="chart-head-text">
+            <h3 class="chart-title">Indicadores antropométricos por edad</h3>
+            <p class="chart-sub">Porcentaje de menores afectados por categoría, edad en meses</p>
+          </div>
+          <span class="chart-period">ENDESA/MICS 2019</span>
+        </div>
+        <div class="chart-area"><canvas id="ch-antropo" data-png="OBSAN_antropometricos_edad_ENDESA"></canvas></div>
+        <div class="chart-foot"><strong>Fuente:</strong> ENDESA/MICS 2019, capítulo 8.</div>
+      </div>
+
+      <div class="chart-card col-12">
+        <div class="chart-head">
+          <div class="chart-head-text">
+            <h3 class="chart-title">Resumen comparativo de indicadores nutricionales</h3>
+            <p class="chart-sub">Brechas urbano-rural, por quintil de riqueza y departamentos extremos</p>
+          </div>
+          <span class="chart-period">ENDESA/MICS 2019</span>
+        </div>
+        <div class="scroll-table">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Indicador</th>
+                <th class="num">Nacional</th>
+                <th class="num">Urbano</th>
+                <th class="num">Rural</th>
+                <th class="num">Q1 (más pobre)</th>
+                <th class="num">Q5 (más rico)</th>
+                <th class="num">Máx. departamental</th>
+                <th class="num">Mín. departamental</th>
+              </tr>
+            </thead>
+            <tbody id="tbl-nutricion"></tbody>
+          </table>
+        </div>
+        <div class="chart-foot"><strong>Fuente:</strong> ENDESA/MICS 2019. <strong>Nota:</strong> La diversidad mínima alcanza el 57&nbsp;% en niños de 6–23 meses; la lactancia materna exclusiva (0–5 meses), el 30&nbsp;% (INE et al., 2021, p.&nbsp;9).</div>
+      </div>
+    </div>
+
+    <div class="callout">
+      <strong>Doble carga de malnutrición:</strong> el 19&nbsp;% de menores presenta desnutrición crónica; al mismo tiempo, el sobrepeso y la obesidad en mujeres de 15–49 años alcanzó el 61.4&nbsp;% en municipios vulnerables post-pandemia (INE y AECID, 2022). La transición epidemiológica nutricional plantea retos simultáneos en políticas alimentarias y de salud pública.
+    </div>
+  </section>
+
+  <!-- ============ 07 FUENTES ============ -->
+  <section class="section" id="fuentes">
+    <div class="section-head">
+      <span class="section-num">07 — Fuentes y referencias</span>
+      <h2 class="section-title">Trazabilidad documental del dashboard</h2>
+      <p class="section-lead">Todas las cifras integradas en este tablero proceden de fuentes institucionales primarias o de su elaboración por OBSAN a partir de éstas. Las referencias completas, en formato APA 7, se organizan a continuación por institución emisora.</p>
+    </div>
+
+    <div class="acc-controls">
+      <button class="btn-tool" id="acc-expand" type="button"><svg viewBox="0 0 24 24"><path d="M7 10l5 5 5-5" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>Expandir todas</button>
+      <button class="btn-tool" id="acc-collapse" type="button"><svg viewBox="0 0 24 24"><path d="M7 14l5-5 5 5" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>Contraer todas</button>
+      <span class="acc-summary" id="acc-summary">19 referencias agrupadas en 4 categorías</span>
+    </div>
+
+    <div class="refs-accordion" id="refs-accordion"></div>
+
+    <div class="callout" style="margin-top:24px">
+      <strong>EL dashboard</strong> acompaña al Documentos sobre el Panorama de la SAN 2019-2025 (Mayo&nbsp;2026).
+    </div>
+  </section>
+
+  </div><!-- /container -->
+</main>
+
+<!-- ===================== FOOTER ===================== -->
+<footer class="site-footer">
+  <div class="container">
+    <div class="footer-grid">
+      <div>
+        <h4>Observatorio en Seguridad Alimentaria y Nutricional</h4>
+        <p>Adscrito al Instituto de Investigaciones Sociales (IIS) de la Facultad de Ciencias Sociales (FCCSS) de la Universidad Nacional Autónoma de Honduras (UNAH).</p>
+        <p style="margin-top:10px">El OBSAN tiene como propósito generar evidencia académica, investigación aplicada y análisis de información estratégica que aporte al debate público sobre seguridad alimentaria, desarrollo humano y políticas alimentarias en Honduras.</p>
+      </div>
+      <div>
+        <h4>Equipo</h4>
+        <p class="team-name">Christian Alexis Manzanares Cruz</p>
+        <p class="team-role">Especialista en Sistemas de Información - OBSAN<br><a href="https://orcid.org/0009-0004-7419-0449" target="_blank" rel="noopener" style="color: #e8c76a;">ORCID: 0009-0004-7419-0449</a></p>
+        <p class="team-name">Fiama Noelia García Castillo</p>
+        <p class="team-role">Especialista en SAN - OBSAN<br><a href="https://orcid.org/0009-0009-0254-2683" target="_blank" rel="noopener" style="color: #e8c76a;">ORCID: 0009-0009-0254-2683</a></p>
+        <p class="team-name">María Luisa García Rodríguez</p>
+        <p class="team-role">Coordinadora - OBSAN<br><a href="https://orcid.org/0009-0003-3775-1449" target="_blank" rel="noopener" style="color: #e8c76a;">ORCID: 0009-0003-3775-1449</a></p>   
+        <p style="margin:0">Tegucigalpa, M.D.C., Honduras</p>
+      </div>
+      <div>
+        <h4>Recursos</h4>
+        <ul>
+          <li><a href="#resumen">Volver al inicio del tablero</a></li>
+          <li><a href="https://obsan.unah.edu/" target="_blank" rel="noopener">OBSAN - UNAH</a></li>
+          <li><a href="https://ine.gob.hn/censo-agropecuario-nacional-2024/" target="_blank" rel="noopener">CAN 2024 (INE)</a></li>
+          <li><a href="https://www.ipcinfo.org/" target="_blank" rel="noopener">IPC/CIF - Sistema global</a></li>
+          <li><a href="https://www.bch.hn/" target="_blank" rel="noopener">Banco Central de Honduras</a></li>
+        </ul>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <span>OBSAN/IIS/FCCSS/UNAH · 2026 — Panorama SAN Honduras 2019–2025</span>
+    </div>
+  </div>
+</footer>
+
+<script>
+/* =====================================================
+   OBSAN — DASHBOARD SAN HONDURAS 2019–2025
+   Datos centralizados. Para futuras revisiones por pares,
+   modificar únicamente el objeto OBSAN_DATA y la lista
+   REFS. El código de visualización lee automáticamente.
+   ===================================================== */
+
+const OBSAN_DATA = {
+  // -------- 01 RESUMEN: KPIs --------
+  kpis: [
+    { label: "Subalimentación", value: "20.4", unit: "%", desc: "Prevalencia más alta de Mesoamérica.", source: "FAO et al. (2025)", period: "2021–2023", style: "alert" },
+    { label: "Crisis o Emergencia (CIF F3+)", value: "1.78", unit: "millones", desc: "Aprox. 19% de la población analizada en CIF.", source: "UTSAN (2025)", period: "Dic 2024 – Mar 2025", style: "alert" },
+    { label: "Pobreza total", value: "62.9", unit: "%", desc: "Hogares; 6.4 M de personas en pobreza.", source: "INE (2025a)", period: "2024", style: "warn" },
+    { label: "Pobreza extrema", value: "40.1", unit: "%", desc: "Hogares; concentración en el área rural.", source: "INE (2025a)", period: "2024", style: "warn" },
+    { label: "Remesas familiares", value: "11,904", unit: "M USD", desc: "≈ 30 % del PIB; récord histórico.", source: "BCH (2026)", period: "2025", style: "good" },
+    { label: "CBA urbana", value: "2,683.60", unit: "L/persona/mes", desc: "+49 % acumulado vs 2019.", source: "OBSAN (2026)", period: "2025", style: "alert" },
+    { label: "Productores agropecuarios", value: "408,965", unit: "personas", desc: "+32.6 % vs 1993; 71.6 % hombres.", source: "INE/SAG (2025)", period: "CAN 2024", style: "" },
+    { label: "Desnutrición crónica", value: "19", unit: "%", desc: "Menores de 5 años; 33 % en Q1, 6 % en Q5.", source: "ENDESA/MICS 2019", period: "2019", style: "alert" }
+  ],
+
+  // -------- 02 MACROECONOMÍA --------
+  pib: {
+    years: [2019, 2020, 2021, 2022, 2023, 2024],
+    values: [2.7, -9.0, 12.5, 4.1, 3.6, 3.6]
+  },
+  remesas: {
+    years: [2019, 2020, 2021, 2022, 2023, 2024, 2025],
+    monto: [5384.5, 5573.1, 7184.4, 8464.9, 8946.3, 9497.6, 11904.4],
+    pctPIB: [21.6, 23.8, 25.6, 27.0, 26.0, 25.0, 30.2]
+  },
+  cba: {
+    years: ["2019", "2021", "2023", "2024", "2025"],
+    cbaUrb: [1796.45, 1914.55, 2465.97, 2457.16, 2683.60],
+    cbaRur: [1360.60, 1441.65, 1901.71, 1895.23, 2058.84],
+    cbsUrb: [3592.85, 3829.14, 4931.94, 5131.84, 5367.20],
+    salario: [9443.24, 11278.75, 12384.07, 13291.16, 13291.16]
+  },
+  inflacion: {
+    years: [2019, 2020, 2021, 2022, 2023, 2024],
+    general: [4.1, 4.0, 5.3, 9.8, 5.2, 3.9]
+  },
+  pobreza: {
+    // EPHPM no se levantó en 2020
+    years: ["2019", "2021", "2023", "2024"],
+    total: [70.0, 73.6, 64.1, 62.9],
+    extrema: [42.0, 53.7, 41.5, 40.1]
+  },
+  estructuraGasto: {
+    categorias: ["Alimentos y bebidas", "Transporte", "Vivienda y servicios", "Restaurantes y alojamiento", "Salud", "Educación", "Otros"],
+    nacional:  [26.5, 14.2, 11.9, 8.3, 7.2, 3.1, 28.8],
+    urbano:    [24.0, 13.6, 13.4, 9.0, 7.1, 4.0, 28.9],
+    rural:     [31.5, 15.5,  8.9, 6.9, 7.6, 1.4, 28.2]
+  },
+
+  // -------- 03 CIF --------
+  cifSerie: [
+    { period: "Nov 2019",     f1: 46,   f2: 35, f3: 15, f4: 3, f5: 0 },
+    { period: "Jun 2020*",    f1: 31,   f2: 37, f3: 25, f4: 7, f5: 0 },
+    { period: "Dic 2020*",    f1: 31,   f2: 37, f3: 25, f4: 7, f5: 0 },
+    { period: "Dic 2021",     f1: 37,   f2: 40, f3: 21, f4: 3, f5: 0 },
+    { period: "Dic 2022",     f1: 42,   f2: 34, f3: 20, f4: 3, f5: 0 },
+    { period: "Dic 2023",     f1: 46,   f2: 36, f3: 16, f4: 2, f5: 0 },
+    { period: "Dic 2024",     f1: 45,   f2: 37, f3: 17, f4: 1, f5: 0 },
+    { period: "Nov 2025",     f1: 51,   f2: 36, f3: 13, f4: 0, f5: 0 }
+  ],
+  // Áreas: 19 (incluyendo Distrito Central como área separada de FM)
+  cifDeptos: [
+    { id: "hn-cr", name: "Cortés y El Progreso",  pop: 2161921, f3plus: 21, f3: 20, f4: 1, fase: 3 },
+    { id: "hn-ch", name: "Choluteca",             pop:  502226, f3plus: 18, f3: 17, f4: 1, fase: 2 },
+    { id: "hn-cl", name: "Colón",                 pop:  370601, f3plus: 25, f3: 23, f4: 2, fase: 3 },
+    { id: "hn-cm", name: "Comayagua",             pop:  615197, f3plus: 13, f3: 12, f4: 1, fase: 2 },
+    { id: "hn-cp", name: "Copán",                 pop:  443126, f3plus: 19, f3: 18, f4: 1, fase: 2 },
+    { id: "hn-fm", name: "Distrito Central",      pop: 1357756, f3plus: 10, f3:  9, f4: 1, fase: 2, isDC: true },
+    { id: "hn-ep", name: "El Paraíso",            pop:  533123, f3plus: 15, f3: 15, f4: 0, fase: 2 },
+    { id: "hn-fm", name: "Francisco Morazán",     pop:  439423, f3plus: 17, f3: 16, f4: 1, fase: 2, isFM: true },
+    { id: "hn-gd", name: "Gracias a Dios",        pop:  114359, f3plus: 50, f3: 45, f4: 5, fase: 3 },
+    { id: "hn-in", name: "Intibucá",              pop:  288606, f3plus: 16, f3: 14, f4: 2, fase: 2 },
+    { id: "hn-ib", name: "Islas de la Bahía",     pop:   84266, f3plus: 15, f3: 15, f4: 0, fase: 2 },
+    { id: "hn-lp", name: "La Paz",                pop:  243014, f3plus: 17, f3: 15, f4: 2, fase: 2 },
+    { id: "hn-le", name: "Lempira",               pop:  394989, f3plus: 18, f3: 15, f4: 3, fase: 2 },
+    { id: "hn-oc", name: "Ocotepeque",            pop:  180090, f3plus: 15, f3: 15, f4: 0, fase: 2 },
+    { id: "hn-ol", name: "Olancho",               pop:  618658, f3plus: 15, f3: 15, f4: 0, fase: 2 },
+    { id: "hn-sb", name: "Santa Bárbara",         pop:  503869, f3plus: 20, f3: 19, f4: 1, fase: 3 },
+    { id: "hn-va", name: "Valle",                 pop:  200886, f3plus: 18, f3: 18, f4: 0, fase: 2 },
+    { id: "hn-yo", name: "Yoro",                  pop:  464756, f3plus: 20, f3: 18, f4: 2, fase: 3 },
+    { id: "hn-at", name: "Atlántida",             pop:  522996, f3plus: 22, f3: 20, f4: 2, fase: 3 }
+  ],
+
+  // -------- 04 GRANOS --------
+  granosProd: {
+    grano: ["Maíz", "Frijol", "Arroz oro", "Sorgo"],
+    prod:  [640421.6, 149927.9, 20993.0, 10636.5],
+    rend:  [2.3, 1.6, 4.8, 1.7],
+    productores: [308979, 136109, 4195, 7793]
+  },
+  precios: {
+    years: [2019, 2020, 2021, 2022, 2023, 2024],
+    frijol: [12.25, 12.51, 13.55, 17.98, 22.67, 21.42],
+    maiz:   [ 5.10,  4.88,  4.67,  6.74,  6.93,  6.23],
+    arroz:  [11.22, 11.28, 11.54, 13.01, 13.55, 13.34]
+  },
+  concentracion: {
+    deptos: ["El Paraíso", "Francisco Morazán", "Lempira", "Choluteca", "Otros 14 deptos."],
+    pct:    [13.0, 9.4, 9.2, 8.4, 60.0]
+  },
+
+  // -------- 05 CAN 2024 --------
+  canKpis: [
+    { label: "Productores", value: "408,965", unit: "", desc: "+32.6 % vs censo 1993", source: "CAN 2024", period: "2023–2024", style: "" },
+    { label: "Explotaciones", value: "412,255", unit: "", desc: "+30.0 % vs 1993", source: "CAN 2024", period: "2023–2024", style: "" },
+    { label: "Área cultivada", value: "1.11", unit: "M ha", desc: "+38.5 % vs 1993", source: "CAN 2024", period: "2023–2024", style: "" },
+    { label: "Riego", value: "8.6", unit: "%", desc: "del área cultivada cuenta con riego.", source: "CAN 2024", period: "2023–2024", style: "alert" },
+    { label: "Asistencia técnica", value: "11.6", unit: "%", desc: "de productores la recibieron.", source: "CAN 2024", period: "2023–2024", style: "warn" },
+    { label: "Acceso a crédito", value: "4.8", unit: "%", desc: "utilizó crédito durante el año censal.", source: "CAN 2024", period: "2023–2024", style: "alert" }
+  ],
+  comparacionCensos: {
+    categorias: ["Productores", "Explotaciones", "Área cultivada (ha)"],
+    y1993: [308347, 317199, 801137],
+    y2024: [408965, 412255, 1109748]
+  },
+  tenencia: {
+    categorias: ["Tierra propia", "Arrendamiento (recibido)", "No especificado", "Tierra nacional", "Consejo territorial", "Ejidal"],
+    pct:        [88.9, 5.3, 2.8, 1.9, 1.4, 1.0]
+  },
+  productorSexo: {
+    categorias: ["Hombres", "Mujeres", "Organizaciones"],
+    pct:        [71.6, 28.1, 0.3]
+  },
+  productorEdad: {
+    categorias: ["15–24 años", "25–59 años", "60+ años"],
+    pct:        [3.5, 72.1, 24.3]
+  },
+  productorEducacion: {
+    categorias: ["Sin nivel", "Básica", "Media", "Superior", "No responde"],
+    pct:        [29.3, 63.6, 4.2, 2.0, 0.9]
+  },
+  capacidades: {
+    indicador: ["Personas naturales (formalización)", "Riego (% del área)", "Asistencia técnica", "Acceso a crédito", "Sin nivel educativo"],
+    pct:       [99.63, 8.6, 11.6, 4.8, 29.3]
+  },
+
+  // -------- 06 NUTRICIÓN --------
+  desnutricionCronica: {
+    categorias: ["Nacional", "Urbano", "Rural", "Q1 más pobre", "Q5 más rico", "La Paz (máx.)", "Islas de la Bahía (mín.)"],
+    pct:        [19, 12, 23, 33, 6, 37.5, 6]
+  },
+  antropoEdad: {
+    edades: ["0–5", "6–11", "12–17", "18–23", "24–35", "36–47", "48–59"],
+    retraso:    [9, 11, 16, 20, 23, 22, 20],
+    sobrepeso:  [7, 4, 5, 5, 3.5, 5, 4],
+    emaciacion: [2.8, 2.1, 1.7, 3.3, 2.0, 0.9, 1.7],
+    bajoPeso:   [5, 4, 7, 8, 8, 7, 8]
+  },
+  tablaNutricion: [
+    { ind: "Retraso del crecimiento", nac: 19, urb: 12, rur: 23, q1: 33, q5: 6, max: "37.5 (La Paz)", min: "6 (Islas Bahía)" },
+    { ind: "Emaciación", nac: 1.9, urb: 2.0, rur: 1.8, q1: "—", q5: "—", max: "—", min: "—" },
+    { ind: "Sobrepeso (menores 5)", nac: 5, urb: "—", rur: "—", q1: "—", q5: "—", max: "—", min: "—" },
+    { ind: "Lactancia exclusiva (0–5 m)", nac: 30, urb: "—", rur: "—", q1: "—", q5: "—", max: "—", min: "—" },
+    { ind: "Diversidad mínima (6–23 m)", nac: 57, urb: "—", rur: "—", q1: "—", q5: "—", max: "—", min: "—" }
+  ]
+};
+
+// -------- 07 REFERENCIAS APA 7 (con enlaces seguros) --------
+
+const normalizeUrl = (url) =>
+  url && !/^https?:\/\//i.test(url)
+    ? `https://${url.replace(/^\/+/, "")}`
+    : url;
+
+const makeLink = (url) =>
+  url
+    ? `<a href="${normalizeUrl(url)}" target="_blank" rel="noopener noreferrer" style="color: #FDBA13;">Enlace</a>`
+    : "";
+
+// Base completa de referencias del dashboard
+// Cada referencia indica institución (cat) para agruparse en el acordeón.
+// Categorías: bch | ine | intl | san
+const REFS = [
+  // ---------- BANCO CENTRAL DE HONDURAS ----------
+  {
+    cat: "bch",
+    text: "Banco Central de Honduras (BCH). (2025a). <b>Encuesta Nacional de Ingresos y Gastos de los Hogares (ENIGH) 2023-2024</b>.",
+    url: "www.bch.hn/enigh23-24"
+  },
+  {
+    cat: "bch",
+    text: "Banco Central de Honduras (BCH). (2025b). <b>Memoria Anual 2024</b>.",
+    url: "https://www.bch.hn/estadisticos/GIE/LIBMemoria/Memoria%20Anual%202024.pdf"
+  },
+  {
+    cat: "bch",
+    text: "Banco Central de Honduras (BCH). (2025c). <b>Remesas familiares corrientes</b> [Reportes dinámicos].",
+    url: "https://www.bch.hn/estadisticas-y-publicaciones-economicas/reportes-dinamicos/sector-externo/remesas-familiares-corrientes"
+  },
+  {
+    cat: "bch",
+    text: "Banco Central de Honduras (BCH). (2026, enero 15). Honduras superó en 2025 los 12 mil millones de dólares en remesas.",
+    url: "https://www.prensa-latina.cu/2026/01/15/honduras-supero-en-2025-los-12-mil-millones-de-dolares-en-remesas/"
+  },
+
+  // ---------- INE Y REGISTROS ESTADÍSTICOS NACIONALES ----------
+  {
+    cat: "ine",
+    text: "Instituto Nacional de Estadística (INE). (2025a). <b>Boletín de pobreza 2024 — EPHPM</b>. Tegucigalpa: INE.",
+    url: "https://temp.ine.gob.hn/wp-content/uploads/2025/02/Boletin-Pobreza-2024.pdf"
+  },
+  {
+    cat: "ine",
+    text: "Instituto Nacional de Estadística (INE) y Secretaría de Agricultura y Ganadería (SAG). (2025). <b>Censo Agropecuario Nacional, año agrícola 2023–2024</b>. Tegucigalpa: INE/SAG.",
+    url: "https://ine.gob.hn/censo-agropecuario-nacional-2024/"
+  },
+  {
+    cat: "ine",
+    text: "Instituto Nacional de Estadística (INE) y Agencia Española de Cooperación Internacional para el Desarrollo (AECID). (2022). <b>Análisis del impacto de la pandemia por COVID-19 en la seguridad alimentaria y nutricional en 39 municipios de Honduras</b>.",
+    url: "https://ine.gob.hn/2022/10/18/analisis-del-impacto-de-la-pandemia-por-covid-19-en-la-seguridad-alimentaria-y-nutricional-en-39-municipios-de-honduras/"
+  },
+  {
+    cat: "ine",
+    text: "Instituto Nacional de Estadística (INE), Naciones Unidas, PMA y UNICEF. (2022). <b>Evaluación de la situación nutricional y de seguridad alimentaria en 4 regiones priorizadas de Honduras</b>.",
+    url: "https://temp.ine.gob.hn/wp-content/uploads/2025/04/INFORME-SMART-CARI-2022.pdf"
+  },
+  {
+    cat: "ine",
+    text: "Instituto Nacional de Estadística (INE), Secretaría de Coordinación General del Gobierno (SCGG), Secretaría de Salud (SESAL), Unión Europea, UNFPA y UNICEF. (2021). <b>Encuesta Nacional de Demografía y Salud, ENDESA/MICS 2019</b>. Tegucigalpa.",
+    url: "https://ine.gob.hn/2020/06/17/informe-endesa-mics-2019/"
+  },
+
+  // ---------- ORGANISMOS INTERNACIONALES Y PANORAMAS REGIONALES ----------
+  {
+    cat: "intl",
+    text: "Banco Mundial. (2024). <b>Crecimiento del PIB — Honduras</b>. Indicadores de Desarrollo Mundial.",
+    url: "https://datos.bancomundial.org/indicador/NY.GDP.MKTP.KD.ZG?locations=HN"
+  },
+  {
+    cat: "intl",
+    text: "CEPAL. (2020a). <b>Estudio Económico de América Latina y el Caribe 2020</b>. Naciones Unidas.",
+    url: "https://repositorio.cepal.org/server/api/core/bitstreams/6ca85081-c572-4a08-8723-bf9bf1889e2f/content"
+  },
+  {
+    cat: "intl",
+    text: "CEPAL. (2023). <b>Estudio Económico de América Latina y el Caribe 2023</b>. Naciones Unidas.",
+    url: "https://repositorio.cepal.org/server/api/core/bitstreams/f6492ef5-7628-4667-a28d-cc35738adf8e/content"
+  },
+  {
+    cat: "intl",
+    text: "CEPAL. (2024). <b>Panorama Social de América Latina y el Caribe 2024</b>. Naciones Unidas.",
+    url: "https://www.cepal.org/es/publicaciones/80858-panorama-social-america-latina-caribe-2024-desafios-la-proteccion-social"
+  },
+  {
+    cat: "intl",
+    text: "FAO, FIDA, OPS, PMA y UNICEF. (2023). <b>América Latina y el Caribe — Panorama regional de la seguridad alimentaria y la nutrición 2022</b>. Santiago: FAO.",
+    url: "https://openknowledge.fao.org/handle/20.500.14283/cc3859es"
+  },
+  {
+    cat: "intl",
+    text: "FAO, FIDA, OPS, PMA y UNICEF. (2025). <b>América Latina y el Caribe — Panorama regional de la seguridad alimentaria y la nutrición 2024</b>. Santiago: FAO.",
+    url: "https://doi.org/10.4060/cd3877es"
+  },
+
+  // ---------- POLÍTICA SAN, OBSERVATORIOS Y CENTROS DE INVESTIGACIÓN ----------
+  {
+    cat: "san",
+    text: "Centro de Estudios para el Desarrollo Humano (CDC) / Centro para la Defensa del Consumidor — referenciado en Graziano da Silva, J. et al. (2021).",
+    url: "https://doi.org/10.4060/cb5441es"
+  },
+  {
+    cat: "san",
+    text: "Instituto Centroamericano de Estudios Fiscales (ICEFI). (2021). <b>Inversión social y gasto en protección social en Honduras</b>.",
+    url: "https://www.icefi.org/sites/default/files/honduras_perfiles_macrofiscale_-_icefi.epub"
+  },
+  {
+    cat: "san",
+    text: "Observatorio en Seguridad Alimentaria y Nutricional (OBSAN). (2026). <b>Serie de datos de precios de granos básicos y de la canasta básica</b>. Tegucigalpa: OBSAN/IIS/UNAH.",
+    url: "https://obsan.unah.edu.hn/dashboard-san/#"
+  },
+  {
+    cat: "san",
+    text: "Unidad Técnica de Seguridad Alimentaria y Nutricional (UTSAN/SAG). (2025). <b>Informe del Análisis de Inseguridad Alimentaria Aguda de la CIF, Honduras 2019–2025</b>.",
+    url: "https://obsan.unah.edu.hn/dashboard-san/insana/#"
+  }
+];
+
+// Metadatos de las categorías del acordeón
+const REF_CATEGORIES = [
+  { id: "bch",  abbr: "BCH",  title: "Banco Central de Honduras",
+    sub: "Macroeconomía, ENIGH y remesas — fuente primaria del análisis de acceso económico." },
+  { id: "ine",  abbr: "INE",  title: "INE y registros estadísticos nacionales",
+    sub: "Censos, EPHPM, ENDESA y evaluaciones nutricionales en co-autoría con organismos." },
+  { id: "intl", abbr: "INT",  title: "Organismos internacionales y panoramas regionales",
+    sub: "FAO, CEPAL y Banco Mundial — contexto comparado y series globales." },
+  { id: "san",  abbr: "SAN",  title: "Política SAN, observatorios y centros de investigación",
+    sub: "OBSAN, UTSAN/SAG, ICEFI y referencias cruzadas del marco de seguridad alimentaria." }
+];
+
+/* ============ GeoJSON Honduras ============ */
+const HN_GEO = {"type":"FeatureCollection","features":[{"type":"Feature","id":"hn-ib","properties":{"name":"Islas de la Bah\u00eda","code":"IB"},"geometry":{"type":"MultiPolygon","coordinates":[[[[3326,9107],[3298,9088],[3184,9039],[3125,9071],[3140,9091],[3217,9129],[3310,9149],[3341,9137],[3326,9107]]],[[[4498,9679],[4461,9660],[4427,9670],[4375,9658],[4308,9660],[4222,9627],[4128,9573],[4065,9550],[4000,9504],[3901,9481],[3811,9403],[3813,9474],[3931,9558],[4087,9631],[4274,9690],[4326,9697],[4533,9689],[4498,9679]]],[[[5027,9706],[4939,9646],[4932,9662],[4973,9739],[4999,9752],[5046,9825],[5103,9851],[5162,9818],[5115,9791],[5084,9735],[5050,9732],[5027,9706]]]]}},{"type":"Feature","id":"hn-va","properties":{"name":"Valle","code":"VA"},"geometry":{"type":"MultiPolygon","coordinates":[[[[2027,4010],[1988,4003],[1941,4065],[2044,4076],[2027,4010]]],[[[2031,4217],[2122,4222],[2091,4197],[2112,4127],[2085,4102],[2005,4128],[1967,4151],[1972,4182],[2010,4225],[2031,4217]]],[[[2457,4260],[2420,4292],[2369,4289],[2338,4309],[2290,4260],[2294,4213],[2277,4199],[2162,4192],[2171,4222],[2073,4245],[2038,4223],[2061,4285],[2037,4294],[2038,4364],[2007,4387],[1966,4346],[1981,4295],[1956,4248],[1908,4213],[1859,4200],[1753,4242],[1744,4272],[1691,4285],[1829,4348],[1859,4382],[1851,4450],[1812,4476],[1757,4470],[1739,4511],[1749,4560],[1792,4661],[1801,4792],[1842,4849],[1831,4879],[1891,5015],[1811,5070],[1910,5077],[1953,5049],[1990,5049],[1986,4919],[2070,4850],[2156,4842],[2283,4752],[2315,4755],[2383,4697],[2379,4626],[2421,4532],[2483,4485],[2478,4448],[2509,4367],[2512,4331],[2493,4287],[2457,4260]]]]}},{"type":"Feature","id":"hn-at","properties":{"name":"Atl\u00e1ntida","code":"AT"},"geometry":{"type":"Polygon","coordinates":[[[1860,8781],[1931,8770],[2008,8724],[2020,8750],[2098,8806],[2053,8733],[2238,8561],[2291,8539],[2346,8549],[2382,8597],[2444,8596],[2463,8634],[2524,8653],[2702,8612],[2858,8557],[3019,8540],[3203,8497],[3331,8499],[3468,8535],[3518,8575],[3568,8549],[3642,8543],[3980,8573],[4038,8571],[4094,8548],[4078,8527],[4088,8475],[4145,8411],[4170,8358],[4224,8336],[4227,8254],[4203,8215],[4125,8176],[4039,8200],[3957,8185],[3906,8196],[3843,8192],[3751,8214],[3694,8198],[3585,8141],[3504,8117],[3392,8121],[3371,8150],[3247,8117],[3137,8114],[3044,8024],[2996,7993],[2883,7953],[2804,7895],[2733,7896],[2526,7949],[2469,7922],[2398,7957],[2374,7992],[2361,8079],[2306,8096],[2239,8058],[2063,8036],[2036,8047],[1957,8144],[1930,8287],[1912,8321],[1757,8424],[1797,8439],[1808,8478],[1745,8553],[1754,8588],[1794,8634],[1820,8694],[1866,8739],[1860,8781]]]}},{"type":"Feature","id":"hn-gd","properties":{"name":"Gracias a Dios","code":"GD"},"geometry":{"type":"Polygon","coordinates":[[[6581,8915],[6667,8888],[6834,8814],[7143,8721],[7168,8703],[7137,8647],[7137,8575],[7174,8540],[7251,8549],[7261,8602],[7320,8558],[7364,8565],[7490,8551],[7533,8582],[7496,8597],[7315,8627],[7219,8670],[7204,8698],[7512,8643],[7771,8624],[7806,8613],[8030,8434],[8509,8039],[8676,7941],[8784,7911],[8798,7879],[8761,7866],[8663,7929],[8564,7975],[8489,7979],[8492,8010],[8418,8096],[8387,8086],[8317,8130],[8281,8125],[8229,8081],[8169,8105],[8196,8151],[8144,8152],[8151,8102],[8194,8044],[8170,8030],[8117,8130],[8077,8154],[8025,8139],[7954,8149],[7979,8095],[8011,8084],[8003,8028],[8055,8072],[8070,8122],[8102,8118],[8155,8013],[8166,7973],[8111,7935],[8125,7890],[8185,7810],[8267,7779],[8284,7796],[8266,7848],[8311,7806],[8306,7750],[8330,7720],[8448,7727],[8401,7702],[8416,7661],[8467,7613],[8503,7606],[8575,7621],[8640,7657],[8543,7716],[8517,7749],[8483,7754],[8349,7799],[8266,7885],[8337,7922],[8493,7856],[8528,7802],[8582,7772],[8632,7762],[8686,7706],[8651,7681],[8679,7664],[8722,7685],[8736,7632],[8733,7566],[8750,7535],[8784,7573],[8800,7538],[8843,7600],[8905,7627],[8967,7636],[8985,7707],[9122,7682],[9151,7689],[9144,7558],[9104,7554],[9073,7599],[9029,7595],[8989,7528],[8991,7493],[9022,7503],[9035,7553],[9051,7477],[9107,7480],[9155,7538],[9233,7567],[9196,7621],[9169,7699],[9147,7719],[9115,7702],[9037,7737],[9007,7723],[9007,7760],[8903,7790],[8869,7821],[8805,7847],[8843,7895],[8895,7857],[9124,7745],[9360,7660],[9451,7596],[9472,7562],[9502,7448],[9534,7376],[9581,7309],[9635,7267],[9851,7186],[9769,7184],[9699,7157],[9615,7156],[9581,7172],[9603,7192],[9460,7202],[9397,7239],[9355,7177],[9279,7150],[9232,7199],[9191,7201],[9185,7124],[9158,7132],[9162,7087],[9028,7015],[9010,6949],[8949,6977],[8876,6973],[8838,6937],[8855,6886],[8782,6909],[8786,6881],[8750,6867],[8653,6859],[8688,6821],[8622,6809],[8570,6772],[8534,6795],[8523,6777],[8473,6818],[8474,6746],[8302,6734],[8259,6756],[8212,6757],[8160,6796],[8129,6779],[8177,6706],[8165,6685],[8119,6689],[8093,6666],[8025,6651],[7933,6723],[7887,6729],[7878,6708],[7888,6624],[7879,6585],[7844,6565],[7755,6578],[7712,6650],[7634,6531],[7505,6476],[7441,6509],[7415,6501],[7426,6548],[7299,6551],[7192,6587],[7127,6571],[7081,6662],[7045,6685],[7042,6731],[7007,6735],[7027,6761],[7001,6803],[6917,6844],[6767,6822],[6660,6727],[6602,6686],[6602,6688],[6597,7271],[6581,8915]]]}},{"type":"Feature","id":"hn-cl","properties":{"name":"Col\u00f3n","code":"CL"},"geometry":{"type":"Polygon","coordinates":[[[4125,8176],[4203,8215],[4227,8254],[4224,8336],[4170,8358],[4145,8411],[4088,8475],[4078,8527],[4094,8548],[4134,8522],[4204,8512],[4267,8531],[4431,8634],[4493,8698],[4613,8737],[4860,8747],[4900,8762],[4967,8812],[5003,8853],[5018,8896],[4990,8932],[4828,8960],[4837,8980],[4882,8984],[5108,8941],[5173,8934],[5384,8877],[5393,8812],[5417,8837],[5529,8762],[5606,8730],[5737,8697],[5956,8719],[6143,8726],[6243,8768],[6367,8861],[6450,8911],[6581,8915],[6597,7271],[6492,7392],[6434,7445],[6190,7550],[6161,7568],[6059,7689],[5966,7824],[5904,7874],[5714,7945],[5535,8096],[5395,8171],[5358,8179],[5312,8161],[5263,8184],[5225,8165],[5209,8119],[5138,8067],[5075,8087],[5013,8003],[4908,7899],[4808,7845],[4746,7845],[4598,7802],[4558,7811],[4452,7867],[4436,7947],[4446,8027],[4438,8066],[4310,8103],[4200,8104],[4125,8176]]]}},{"type":"Feature","id":"hn-ol","properties":{"name":"Olancho","code":"OL"},"geometry":{"type":"Polygon","coordinates":[[[6597,7271],[6602,6688],[6602,6686],[6559,6633],[6545,6556],[6509,6544],[6568,6492],[6520,6442],[6565,6442],[6553,6412],[6491,6349],[6454,6332],[6397,6384],[6365,6392],[6344,6316],[6341,6226],[6295,6171],[6296,6121],[6248,6084],[6308,6038],[6332,5962],[6277,5910],[6190,5887],[6124,5887],[6048,5858],[6003,5800],[5976,5801],[5923,5731],[5911,5685],[5858,5591],[5783,5538],[5720,5520],[5691,5443],[5629,5427],[5607,5486],[5554,5525],[5537,5615],[5482,5679],[5438,5667],[5288,5705],[5250,5654],[5208,5649],[5136,5675],[5090,5645],[5080,5603],[5018,5586],[4963,5648],[4896,5678],[4831,5803],[4794,5828],[4749,5833],[4725,5800],[4617,5828],[4542,5944],[4459,5957],[4344,5912],[4279,5866],[4247,5858],[4118,5865],[4067,5923],[3994,5958],[3952,5997],[3855,6024],[3805,6026],[3764,6074],[3694,6071],[3619,6102],[3589,6239],[3559,6312],[3567,6373],[3457,6488],[3424,6497],[3385,6535],[3310,6707],[3282,6792],[3273,6860],[3237,6949],[3284,7025],[3188,7092],[3143,7161],[3167,7205],[3258,7229],[3319,7278],[3372,7439],[3359,7547],[3366,7586],[3441,7643],[3522,7660],[3575,7617],[3654,7613],[3700,7637],[3758,7742],[3795,7743],[3942,7824],[3983,7829],[4072,7789],[4146,7721],[4211,7723],[4352,7803],[4452,7867],[4558,7811],[4598,7802],[4746,7845],[4808,7845],[4908,7899],[5013,8003],[5075,8087],[5138,8067],[5209,8119],[5225,8165],[5263,8184],[5312,8161],[5358,8179],[5395,8171],[5535,8096],[5714,7945],[5904,7874],[5966,7824],[6059,7689],[6161,7568],[6190,7550],[6434,7445],[6492,7392],[6597,7271]]]}},{"type":"Feature","id":"hn-fm","properties":{"name":"Francisco Moraz\u00e1n","code":"FM"},"geometry":{"type":"Polygon","coordinates":[[[3143,7161],[3188,7092],[3284,7025],[3237,6949],[3273,6860],[3282,6792],[3310,6707],[3385,6535],[3424,6497],[3457,6488],[3567,6373],[3559,6312],[3589,6239],[3619,6102],[3489,6003],[3432,5948],[3419,5889],[3386,5830],[3301,5755],[3259,5657],[3292,5632],[3274,5596],[3185,5596],[3148,5581],[3204,5488],[3266,5445],[3268,5343],[3249,5307],[3200,5270],[3140,5281],[3147,5227],[3134,5186],[3129,5069],[3097,4987],[3059,4942],[2974,4957],[2908,5005],[2891,4970],[2896,4901],[2927,4851],[2893,4736],[2801,4774],[2746,4756],[2660,4787],[2600,4780],[2562,4799],[2491,4791],[2434,4846],[2445,4907],[2380,4917],[2327,4910],[2307,4805],[2315,4755],[2283,4752],[2156,4842],[2070,4850],[1986,4919],[1990,5049],[2039,5111],[2062,5172],[2079,5269],[2047,5504],[2049,5541],[2110,5602],[2177,5608],[2247,5643],[2278,5705],[2379,5754],[2371,5784],[2325,5820],[2312,5920],[2320,5949],[2390,5952],[2454,6051],[2405,6098],[2403,6153],[2335,6207],[2309,6279],[2398,6367],[2427,6465],[2525,6431],[2551,6477],[2554,6535],[2577,6559],[2658,6602],[2687,6707],[2673,6823],[2694,6856],[2759,6881],[2739,6920],[2693,6950],[2756,7047],[2790,7077],[2800,7153],[2831,7179],[2913,7189],[2991,7170],[3084,7173],[3143,7161]]]}},{"type":"Feature","id":"hn-yo","properties":{"name":"Yoro","code":"YO"},"geometry":{"type":"Polygon","coordinates":[[[4125,8176],[4200,8104],[4310,8103],[4438,8066],[4446,8027],[4436,7947],[4452,7867],[4352,7803],[4211,7723],[4146,7721],[4072,7789],[3983,7829],[3942,7824],[3795,7743],[3758,7742],[3700,7637],[3654,7613],[3575,7617],[3522,7660],[3441,7643],[3366,7586],[3359,7547],[3372,7439],[3319,7278],[3258,7229],[3167,7205],[3143,7161],[3084,7173],[2991,7170],[2913,7189],[2831,7179],[2800,7153],[2790,7077],[2756,7047],[2693,6950],[2647,6992],[2604,6983],[2573,7004],[2469,7023],[2393,6969],[2348,6974],[2315,7083],[2258,7121],[2241,7174],[2187,7230],[2157,7233],[2100,7180],[2024,7163],[1842,7164],[1833,7244],[1849,7280],[1838,7333],[1787,7384],[1742,7384],[1732,7409],[1657,7422],[1614,7474],[1518,7477],[1528,7561],[1497,7573],[1512,7599],[1514,7666],[1536,7714],[1611,7757],[1698,7879],[1692,7904],[1642,7943],[1653,7958],[1705,7942],[1710,7974],[1680,8044],[1717,8089],[1745,8168],[1773,8161],[1800,8226],[1774,8267],[1701,8336],[1725,8365],[1694,8372],[1757,8424],[1912,8321],[1930,8287],[1957,8144],[2036,8047],[2063,8036],[2239,8058],[2306,8096],[2361,8079],[2374,7992],[2398,7957],[2469,7922],[2526,7949],[2733,7896],[2804,7895],[2883,7953],[2996,7993],[3044,8024],[3137,8114],[3247,8117],[3371,8150],[3392,8121],[3504,8117],[3585,8141],[3694,8198],[3751,8214],[3843,8192],[3906,8196],[3957,8185],[4039,8200],[4125,8176]]]}},{"type":"Feature","id":"hn-cm","properties":{"name":"Comayagua","code":"CM"},"geometry":{"type":"Polygon","coordinates":[[[2693,6950],[2739,6920],[2759,6881],[2694,6856],[2673,6823],[2687,6707],[2658,6602],[2577,6559],[2554,6535],[2551,6477],[2525,6431],[2427,6465],[2398,6367],[2309,6279],[2335,6207],[2403,6153],[2405,6098],[2454,6051],[2390,5952],[2320,5949],[2312,5920],[2325,5820],[2371,5784],[2379,5754],[2278,5705],[2247,5643],[2177,5608],[2110,5602],[2049,5541],[2047,5504],[1985,5498],[1917,5437],[1915,5497],[1893,5532],[1825,5580],[1758,5602],[1765,5660],[1741,5689],[1681,5714],[1681,5762],[1852,5783],[1928,5821],[2006,5835],[2028,5879],[2020,5947],[1986,6013],[1907,5981],[1762,6023],[1745,6044],[1676,6063],[1634,6114],[1630,6162],[1553,6253],[1555,6288],[1482,6336],[1464,6395],[1433,6444],[1372,6477],[1273,6504],[1250,6537],[1272,6574],[1245,6638],[1259,6685],[1342,6754],[1404,6765],[1406,6843],[1446,6784],[1584,6882],[1654,6959],[1725,6984],[1833,7067],[1842,7164],[2024,7163],[2100,7180],[2157,7233],[2187,7230],[2241,7174],[2258,7121],[2315,7083],[2348,6974],[2393,6969],[2469,7023],[2573,7004],[2604,6983],[2647,6992],[2693,6950]]]}},{"type":"Feature","id":"hn-cr","properties":{"name":"Cort\u00e9s","code":"CR"},"geometry":{"type":"Polygon","coordinates":[[[1757,8424],[1694,8372],[1725,8365],[1701,8336],[1774,8267],[1800,8226],[1773,8161],[1745,8168],[1717,8089],[1680,8044],[1710,7974],[1705,7942],[1653,7958],[1642,7943],[1692,7904],[1698,7879],[1611,7757],[1536,7714],[1514,7666],[1512,7599],[1497,7573],[1528,7561],[1518,7477],[1614,7474],[1657,7422],[1732,7409],[1742,7384],[1787,7384],[1838,7333],[1849,7280],[1833,7244],[1842,7164],[1833,7067],[1725,6984],[1654,6959],[1584,6882],[1446,6784],[1406,6843],[1403,6917],[1390,6959],[1335,7008],[1289,7013],[1296,7117],[1330,7212],[1352,7236],[1309,7271],[1220,7318],[1187,7371],[1196,7405],[1268,7481],[1278,7508],[1207,7545],[1170,7621],[1158,7795],[1092,7821],[992,7890],[968,7934],[969,8016],[932,8040],[769,8092],[676,8107],[576,8072],[696,8164],[777,8243],[840,8346],[876,8346],[959,8383],[970,8369],[986,8428],[1016,8431],[1094,8375],[1137,8362],[1182,8382],[1283,8488],[1326,8515],[1335,8549],[1403,8539],[1504,8600],[1520,8642],[1475,8687],[1548,8688],[1657,8734],[1805,8743],[1860,8781],[1866,8739],[1820,8694],[1794,8634],[1754,8588],[1745,8553],[1808,8478],[1797,8439],[1757,8424]]]}},{"type":"Feature","id":"hn-in","properties":{"name":"Intibuc\u00e1","code":"IN"},"geometry":{"type":"Polygon","coordinates":[[[1250,6537],[1273,6504],[1372,6477],[1433,6444],[1464,6395],[1482,6336],[1555,6288],[1553,6253],[1630,6162],[1634,6114],[1514,6036],[1461,6044],[1459,5956],[1431,5903],[1373,5863],[1353,5802],[1280,5799],[1192,5721],[1157,5659],[1107,5634],[970,5490],[1008,5427],[995,5333],[947,5331],[962,5239],[914,5230],[876,5182],[816,5167],[804,5145],[754,5156],[745,5123],[687,5136],[617,5121],[552,5088],[506,5086],[520,5140],[497,5204],[506,5297],[507,5298],[536,5338],[720,5442],[789,5488],[817,5569],[806,5648],[804,5736],[773,5755],[700,5762],[642,5795],[659,5886],[641,5976],[586,6002],[516,6080],[504,6155],[539,6187],[582,6200],[702,6204],[751,6229],[783,6313],[818,6376],[798,6488],[781,6521],[917,6510],[1096,6527],[1205,6510],[1250,6537]]]}},{"type":"Feature","id":"hn-lp","properties":{"name":"La Paz","code":"LP"},"geometry":{"type":"Polygon","coordinates":[[[2047,5504],[2079,5269],[2062,5172],[2039,5111],[1990,5049],[1953,5049],[1910,5077],[1811,5070],[1740,5115],[1709,5183],[1666,5195],[1617,5150],[1549,5158],[1504,5132],[1467,5152],[1427,5148],[1347,5109],[1333,5153],[1247,5247],[1222,5314],[1156,5333],[1065,5323],[995,5333],[1008,5427],[970,5490],[1107,5634],[1157,5659],[1192,5721],[1280,5799],[1353,5802],[1373,5863],[1431,5903],[1459,5956],[1461,6044],[1514,6036],[1634,6114],[1676,6063],[1745,6044],[1762,6023],[1907,5981],[1986,6013],[2020,5947],[2028,5879],[2006,5835],[1928,5821],[1852,5783],[1681,5762],[1681,5714],[1741,5689],[1765,5660],[1758,5602],[1825,5580],[1893,5532],[1915,5497],[1917,5437],[1985,5498],[2047,5504]]]}},{"type":"Feature","id":"hn-sb","properties":{"name":"Santa B\u00e1rbara","code":"SB"},"geometry":{"type":"Polygon","coordinates":[[[1406,6843],[1404,6765],[1342,6754],[1259,6685],[1245,6638],[1272,6574],[1250,6537],[1205,6510],[1096,6527],[917,6510],[781,6521],[819,6583],[818,6658],[742,6674],[704,6732],[754,6816],[718,6838],[672,6837],[647,6872],[612,6879],[575,6832],[533,6804],[454,6924],[417,7025],[336,7038],[261,7013],[200,7002],[161,7058],[220,7244],[263,7281],[263,7317],[230,7393],[247,7434],[204,7457],[137,7532],[142,7582],[64,7681],[520,8028],[576,8072],[676,8107],[769,8092],[932,8040],[969,8016],[968,7934],[992,7890],[1092,7821],[1158,7795],[1170,7621],[1207,7545],[1278,7508],[1268,7481],[1196,7405],[1187,7371],[1220,7318],[1309,7271],[1352,7236],[1330,7212],[1296,7117],[1289,7013],[1335,7008],[1390,6959],[1403,6917],[1406,6843]]]}},{"type":"Feature","id":"hn-cp","properties":{"name":"Cop\u00e1n","code":"CP"},"geometry":{"type":"Polygon","coordinates":[[[-615,6633],[-657,6683],[-689,6763],[-755,6856],[-761,6914],[-703,6972],[-651,7065],[-650,7112],[-684,7144],[-656,7226],[-599,7287],[-545,7313],[-368,7371],[-307,7399],[64,7681],[142,7582],[137,7532],[204,7457],[247,7434],[230,7393],[263,7317],[263,7281],[220,7244],[161,7058],[200,7002],[261,7013],[270,6956],[263,6909],[204,6812],[203,6762],[232,6702],[239,6649],[113,6630],[26,6641],[0,6632],[16,6552],[69,6502],[102,6445],[106,6337],[17,6340],[-57,6314],[-57,6260],[-101,6256],[-176,6293],[-229,6362],[-241,6447],[-352,6532],[-379,6611],[-405,6649],[-509,6664],[-615,6633]]]}},{"type":"Feature","id":"hn-le","properties":{"name":"Lempira","code":"LE"},"geometry":{"type":"Polygon","coordinates":[[[781,6521],[798,6488],[818,6376],[783,6313],[751,6229],[702,6204],[582,6200],[539,6187],[504,6155],[516,6080],[586,6002],[641,5976],[659,5886],[642,5795],[700,5762],[773,5755],[804,5736],[806,5648],[817,5569],[789,5488],[720,5442],[536,5338],[508,5298],[507,5298],[477,5330],[400,5337],[268,5380],[168,5373],[136,5426],[72,5449],[85,5534],[73,5554],[19,5534],[-89,5536],[-125,5640],[-162,5687],[-232,5715],[-294,5689],[-316,5734],[-317,5840],[-328,5898],[-261,5974],[-175,6003],[-148,6083],[-126,6086],[-80,6048],[-35,6048],[-57,6078],[-47,6120],[2,6106],[82,6146],[133,6299],[106,6337],[102,6445],[69,6502],[16,6552],[0,6632],[26,6641],[113,6630],[239,6649],[232,6702],[203,6762],[204,6812],[263,6909],[270,6956],[261,7013],[336,7038],[417,7025],[454,6924],[533,6804],[575,6832],[612,6879],[647,6872],[672,6837],[718,6838],[754,6816],[704,6732],[742,6674],[818,6658],[819,6583],[781,6521]]]}},{"type":"Feature","id":"hn-oc","properties":{"name":"Ocotepeque","code":"OC"},"geometry":{"type":"Polygon","coordinates":[[[106,6337],[133,6299],[82,6146],[2,6106],[-47,6120],[-57,6078],[-35,6048],[-80,6048],[-126,6086],[-148,6083],[-175,6003],[-261,5974],[-328,5898],[-317,5840],[-316,5734],[-355,5811],[-399,5845],[-424,5938],[-511,5960],[-531,5977],[-522,6013],[-553,6069],[-579,6067],[-635,5990],[-715,6014],[-759,6046],[-848,6066],[-902,6092],[-996,6108],[-999,6164],[-984,6215],[-927,6236],[-895,6282],[-815,6355],[-791,6388],[-748,6400],[-683,6381],[-642,6401],[-632,6463],[-639,6553],[-609,6598],[-615,6633],[-509,6664],[-405,6649],[-379,6611],[-352,6532],[-241,6447],[-229,6362],[-176,6293],[-101,6256],[-57,6260],[-57,6314],[17,6340],[106,6337]]]}},{"type":"Feature","id":"hn-ch","properties":{"name":"Choluteca","code":"CH"},"geometry":{"type":"Polygon","coordinates":[[[2457,4260],[2493,4287],[2512,4331],[2509,4367],[2478,4448],[2483,4485],[2421,4532],[2379,4626],[2383,4697],[2315,4755],[2307,4805],[2327,4910],[2380,4917],[2445,4907],[2434,4846],[2491,4791],[2562,4799],[2600,4780],[2660,4787],[2746,4756],[2729,4680],[2786,4625],[2799,4569],[2823,4554],[2904,4549],[2934,4487],[2965,4463],[2999,4465],[3052,4496],[3092,4541],[3102,4582],[3180,4632],[3229,4698],[3238,4737],[3311,4735],[3318,4722],[3385,4766],[3454,4775],[3481,4808],[3521,4822],[3516,4727],[3555,4673],[3547,4556],[3603,4342],[3578,4265],[3582,4221],[3616,4203],[3643,4118],[3626,4067],[3576,4028],[3544,4029],[3443,4078],[3413,4081],[3361,4057],[3277,3985],[3251,3943],[3238,3877],[3255,3844],[3239,3750],[3261,3728],[3211,3681],[3150,3595],[3069,3549],[3059,3520],[2972,3549],[2570,3524],[2606,3576],[2649,3609],[2566,3618],[2539,3633],[2502,3686],[2506,3715],[2588,3732],[2487,3759],[2386,3756],[2381,3825],[2357,3895],[2272,4040],[2242,4039],[2224,4070],[2242,4101],[2302,4138],[2350,4199],[2373,4193],[2457,4222],[2457,4260]]]}},{"type":"Feature","id":"hn-ep","properties":{"name":"El Para\u00edso","code":"EP"},"geometry":{"type":"Polygon","coordinates":[[[2746,4756],[2801,4774],[2893,4736],[2927,4851],[2896,4901],[2891,4970],[2908,5005],[2974,4957],[3059,4942],[3097,4987],[3129,5069],[3134,5186],[3147,5227],[3140,5281],[3200,5270],[3249,5307],[3268,5343],[3266,5445],[3204,5488],[3148,5581],[3185,5596],[3274,5596],[3292,5632],[3259,5657],[3301,5755],[3386,5830],[3419,5889],[3432,5948],[3489,6003],[3619,6102],[3694,6071],[3764,6074],[3805,6026],[3855,6024],[3952,5997],[3994,5958],[4067,5923],[4118,5865],[4247,5858],[4279,5866],[4344,5912],[4459,5957],[4542,5944],[4617,5828],[4725,5800],[4749,5833],[4794,5828],[4831,5803],[4896,5678],[4963,5648],[5018,5586],[5080,5603],[5090,5645],[5136,5675],[5208,5649],[5250,5654],[5288,5705],[5438,5667],[5482,5679],[5537,5615],[5554,5525],[5607,5486],[5629,5427],[5576,5411],[5543,5369],[5482,5350],[5392,5281],[5343,5287],[5309,5150],[5342,5127],[5348,5078],[5318,5035],[5290,5062],[5214,5064],[5175,5077],[5109,5178],[5071,5195],[5015,5183],[4979,5202],[4941,5252],[4817,5341],[4812,5388],[4831,5446],[4698,5426],[4654,5396],[4606,5319],[4546,5287],[4486,5193],[4372,5070],[4344,5026],[4320,4946],[4300,4923],[4242,4903],[4152,4897],[4085,4939],[4011,4915],[3922,4955],[3853,4951],[3710,4924],[3598,4930],[3529,4889],[3521,4822],[3481,4808],[3454,4775],[3385,4766],[3318,4722],[3311,4735],[3238,4737],[3229,4698],[3180,4632],[3102,4582],[3092,4541],[3052,4496],[2999,4465],[2965,4463],[2934,4487],[2904,4549],[2823,4554],[2799,4569],[2786,4625],[2729,4680],[2746,4756]]]}}]};
+
+/* ============ HELPERS ============ */
+const fmt = (n, d = 0) => n == null ? "—" : Number(n).toLocaleString("es-HN", { minimumFractionDigits: d, maximumFractionDigits: d });
+
+function cssVar(name){
+  return getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+}
+
+function getPalette(){
+  return {
+    primary:    cssVar("--primary"),
+    primarySoft: cssVar("--primary-soft"),
+    accent:     cssVar("--accent-bright"),
+    secondary:  cssVar("--secondary-bright"),
+    ink:        cssVar("--ink"),
+    inkSoft:    cssVar("--ink-soft"),
+    inkMute:    cssVar("--ink-mute"),
+    line:       cssVar("--line"),
+    bg:         cssVar("--bg-card"),
+    bgSoft:     cssVar("--bg-soft"),
+    cif1: "#CDFACD", cif2: "#FAE61E", cif3: "#E67800", cif4: "#C80000", cif5: "#640000"
+  };
+}
+
+/* Default chart settings */
+function defaultChartOptions(p){
+  return {
+    responsive: true,
+    maintainAspectRatio: false,
+    interaction: { mode: "index", intersect: false },
+    layout: { padding: { top: 4, right: 8, bottom: 0, left: 0 } },
+    plugins: {
+      legend: {
+        labels: {
+          color: p.inkSoft,
+          font: { family: "'IBM Plex Sans', sans-serif", size: 12, weight: "500" },
+          padding: 12, boxWidth: 14, usePointStyle: true, pointStyle: "rectRounded"
+        }
+      },
+      tooltip: {
+        backgroundColor: cssVar("--unah-azul-oscuro"),
+        titleFont: { family: "'IBM Plex Sans', sans-serif", weight: "600", size: 12 },
+        bodyFont: { family: "'IBM Plex Mono', monospace", size: 12 },
+        padding: 10, cornerRadius: 6,
+        titleColor: "#FAF7F2", bodyColor: "#FAF7F2",
+        borderColor: cssVar("--accent-bright"), borderWidth: 1
+      }
+    },
+    scales: {
+      x: {
+        grid: { color: p.line, drawTicks: false },
+        ticks: { color: p.inkMute, font: { family: "'IBM Plex Mono', monospace", size: 11 } },
+        border: { color: p.line }
+      },
+      y: {
+        grid: { color: p.line, drawTicks: false },
+        ticks: { color: p.inkMute, font: { family: "'IBM Plex Mono', monospace", size: 11 } },
+        border: { color: p.line }
+      }
+    }
+  };
+}
+
+/* CIF colour by F3+ percentage */
+function cifColor(pct){
+  if (pct >= 50) return "#640000";
+  if (pct >= 30) return "#C80000";
+  if (pct >= 20) return "#E67800";
+  if (pct >= 15) return "#FAE61E";
+  return "#CDFACD";
+}
+
+/* ============ INIT ============ */
+const charts = {};
+
+function renderKpis(target, list){
+  const node = document.getElementById(target);
+  node.innerHTML = list.map(k => `
+    <div class="kpi ${k.style ? 'kpi-'+k.style : ''}">
+      <div class="kpi-label"><span>${k.label}</span><span class="kpi-period">${k.period}</span></div>
+      <div class="kpi-value">${k.value}<span class="kpi-unit"> ${k.unit}</span></div>
+      <div class="kpi-desc">${k.desc}</div>
+      <div class="kpi-source">${k.source}</div>
+    </div>
+  `).join("");
+}
+
+function buildAllCharts(){
+  const p = getPalette();
+  Object.values(charts).forEach(c => c.destroy());
+
+  /* PIB */
+  charts.pib = new Chart(document.getElementById("ch-pib"), {
+    type: "bar",
+    data: {
+      labels: OBSAN_DATA.pib.years,
+      datasets: [{
+        label: "PIB real (%)",
+        data: OBSAN_DATA.pib.values,
+        backgroundColor: OBSAN_DATA.pib.values.map(v => v < 0 ? p.cif4 : p.primary),
+        borderRadius: 4
+      }]
+    },
+    options: { ...defaultChartOptions(p),
+      plugins: { ...defaultChartOptions(p).plugins, legend: { display: false }},
+      scales: { ...defaultChartOptions(p).scales, y: { ...defaultChartOptions(p).scales.y, ticks: { ...defaultChartOptions(p).scales.y.ticks, callback: v => v + "%"}}}
+    }
+  });
+
+  /* Remesas */
+  charts.remesas = new Chart(document.getElementById("ch-remesas"), {
+    data: {
+      labels: OBSAN_DATA.remesas.years,
+      datasets: [
+        { type: "bar", label: "Monto (M USD)", data: OBSAN_DATA.remesas.monto, backgroundColor: p.primary, borderRadius: 4, yAxisID: "y" },
+        { type: "line", label: "% del PIB", data: OBSAN_DATA.remesas.pctPIB, borderColor: p.accent, backgroundColor: p.accent, yAxisID: "y1", tension: 0.35, borderWidth: 2.5, pointRadius: 4, pointBackgroundColor: p.accent }
+      ]
+    },
+    options: { ...defaultChartOptions(p),
+      scales: {
+        x: defaultChartOptions(p).scales.x,
+        y:  { ...defaultChartOptions(p).scales.y, position: "left",  title: { display:true, text: "Millones USD", color: p.inkMute, font:{ size:11 }}},
+        y1: { ...defaultChartOptions(p).scales.y, position: "right", grid: { drawOnChartArea: false }, title: { display:true, text: "% del PIB", color: p.inkMute, font:{ size:11 }}, ticks: { ...defaultChartOptions(p).scales.y.ticks, callback: v => v + "%" }}
+      }
+    }
+  });
+
+  /* CBA + salario */
+  charts.cba = new Chart(document.getElementById("ch-cba"), {
+    type: "line",
+    data: {
+      labels: OBSAN_DATA.cba.years,
+      datasets: [
+        { label: "Salario mínimo prom.", data: OBSAN_DATA.cba.salario, borderColor: p.primary, backgroundColor: "rgba(34,58,117,.06)", tension: 0.3, borderWidth: 2.5, pointRadius: 4, fill: true },
+        { label: "CBS urbana (4 personas)", data: OBSAN_DATA.cba.cbsUrb, borderColor: p.secondary, backgroundColor: "transparent", tension: 0.3, borderWidth: 2.5, pointRadius: 4, borderDash: [4,4] },
+        { label: "CBA urbana", data: OBSAN_DATA.cba.cbaUrb, borderColor: p.accent, backgroundColor: "transparent", tension: 0.3, borderWidth: 2.5, pointRadius: 4 },
+        { label: "CBA rural", data: OBSAN_DATA.cba.cbaRur, borderColor: "#9C6F0E", backgroundColor: "transparent", tension: 0.3, borderWidth: 2, pointRadius: 3, borderDash: [2,3] }
+      ]
+    },
+    options: { ...defaultChartOptions(p),
+      scales: { ...defaultChartOptions(p).scales,
+        y: { ...defaultChartOptions(p).scales.y, ticks: { ...defaultChartOptions(p).scales.y.ticks, callback: v => "L " + v.toLocaleString() }}}
+    }
+  });
+
+  /* Inflación */
+  charts.inflacion = new Chart(document.getElementById("ch-inflacion"), {
+    type: "line",
+    data: {
+      labels: OBSAN_DATA.inflacion.years,
+      datasets: [{ label: "Inflación general (%)", data: OBSAN_DATA.inflacion.general, borderColor: p.cif3, backgroundColor: "rgba(230,120,0,.18)", tension: 0.3, borderWidth: 3, pointRadius: 5, pointBackgroundColor: p.cif3, fill: true }]
+    },
+    options: { ...defaultChartOptions(p),
+      plugins: { ...defaultChartOptions(p).plugins, legend: { display: false }},
+      scales: { ...defaultChartOptions(p).scales,
+        y: { ...defaultChartOptions(p).scales.y, ticks: { ...defaultChartOptions(p).scales.y.ticks, callback: v => v + "%" }}}
+    }
+  });
+
+  /* Pobreza */
+  charts.pobreza = new Chart(document.getElementById("ch-pobreza"), {
+    type: "bar",
+    data: {
+      labels: OBSAN_DATA.pobreza.years,
+      datasets: [
+        { label: "Pobreza total (%)",   data: OBSAN_DATA.pobreza.total,   backgroundColor: p.primary, borderRadius: 4 },
+        { label: "Pobreza extrema (%)", data: OBSAN_DATA.pobreza.extrema, backgroundColor: p.cif4,    borderRadius: 4 }
+      ]
+    },
+    options: { ...defaultChartOptions(p),
+      scales: { ...defaultChartOptions(p).scales,
+        y: { ...defaultChartOptions(p).scales.y, ticks: { ...defaultChartOptions(p).scales.y.ticks, callback: v => v + "%" }, max: 100 }}
+    }
+  });
+
+  /* Estructura del gasto */
+  charts.gasto = new Chart(document.getElementById("ch-gasto"), {
+    type: "bar",
+    data: {
+      labels: OBSAN_DATA.estructuraGasto.categorias,
+      datasets: [
+        { label: "Urbano",   data: OBSAN_DATA.estructuraGasto.urbano,   backgroundColor: p.primary, borderRadius: 3 },
+        { label: "Rural",    data: OBSAN_DATA.estructuraGasto.rural,    backgroundColor: p.accent,  borderRadius: 3 }
+      ]
+    },
+    options: { ...defaultChartOptions(p),
+      indexAxis: "y",
+      scales: { ...defaultChartOptions(p).scales,
+        x: { ...defaultChartOptions(p).scales.x, ticks: { ...defaultChartOptions(p).scales.x.ticks, callback: v => v + "%"}}},
+    }
+  });
+
+  /* CIF SERIE — barras apiladas 100% */
+  const cifPeriods = OBSAN_DATA.cifSerie.map(d => d.period);
+  charts.cifSerie = new Chart(document.getElementById("ch-cif-serie"), {
+    type: "bar",
+    data: {
+      labels: cifPeriods,
+      datasets: [
+        { label: "Fase 1 — Mínima",     data: OBSAN_DATA.cifSerie.map(d => d.f1), backgroundColor: p.cif1, stack: "s" },
+        { label: "Fase 2 — Acentuada",  data: OBSAN_DATA.cifSerie.map(d => d.f2), backgroundColor: p.cif2, stack: "s" },
+        { label: "Fase 3 — Crisis",     data: OBSAN_DATA.cifSerie.map(d => d.f3), backgroundColor: p.cif3, stack: "s" },
+        { label: "Fase 4 — Emergencia", data: OBSAN_DATA.cifSerie.map(d => d.f4), backgroundColor: p.cif4, stack: "s" },
+        { label: "Fase 5 — Catástrofe", data: OBSAN_DATA.cifSerie.map(d => d.f5), backgroundColor: p.cif5, stack: "s" }
+      ]
+    },
+    options: { ...defaultChartOptions(p),
+      scales: { ...defaultChartOptions(p).scales,
+        x: { ...defaultChartOptions(p).scales.x, stacked: true },
+        y: { ...defaultChartOptions(p).scales.y, stacked: true, max: 100, ticks: { ...defaultChartOptions(p).scales.y.ticks, callback: v => v + "%" }}}
+    }
+  });
+
+  /* CIF DEPTOS — barras horizontales (alternativa al mapa) */
+  const sortedDeptos = [...OBSAN_DATA.cifDeptos].sort((a,b) => b.f3plus - a.f3plus);
+  charts.cifDeptos = new Chart(document.getElementById("ch-cif-deptos"), {
+    type: "bar",
+    data: {
+      labels: sortedDeptos.map(d => d.name),
+      datasets: [{
+        label: "% en Crisis o Emergencia (Fase 3+)",
+        data: sortedDeptos.map(d => d.f3plus),
+        backgroundColor: sortedDeptos.map(d => cifColor(d.f3plus)),
+        borderColor: sortedDeptos.map(d => "rgba(0,0,0,.15)"),
+        borderWidth: 1, borderRadius: 3
+      }]
+    },
+    options: { ...defaultChartOptions(p),
+      indexAxis: "y",
+      plugins: { ...defaultChartOptions(p).plugins, legend: { display: false }},
+      scales: { ...defaultChartOptions(p).scales,
+        x: { ...defaultChartOptions(p).scales.x, ticks: { ...defaultChartOptions(p).scales.x.ticks, callback: v => v + "%" }, max: 55, beginAtZero: true }}
+    }
+  });
+
+  /* GRANOS Producción */
+  charts.granosProd = new Chart(document.getElementById("ch-granos-prod"), {
+    data: {
+      labels: OBSAN_DATA.granosProd.grano,
+      datasets: [
+        { type: "bar", yAxisID: "y", label: "Producción (TM)", data: OBSAN_DATA.granosProd.prod, backgroundColor: p.primary, borderRadius: 4 },
+        { type: "line", yAxisID: "y1", label: "Rendimiento (TM/ha)", data: OBSAN_DATA.granosProd.rend, borderColor: p.accent, backgroundColor: p.accent, borderWidth: 2.5, pointRadius: 5, tension: 0 }
+      ]
+    },
+    options: { ...defaultChartOptions(p),
+      scales: {
+        x: defaultChartOptions(p).scales.x,
+        y:  { ...defaultChartOptions(p).scales.y, position: "left",  type: "logarithmic",  title: { display:true, text:"TM (escala log.)", color: p.inkMute, font:{size:11}}, ticks: { ...defaultChartOptions(p).scales.y.ticks, callback: v => v.toLocaleString()}},
+        y1: { ...defaultChartOptions(p).scales.y, position: "right", grid: { drawOnChartArea: false }, title:{display:true, text:"TM/ha", color: p.inkMute, font:{size:11}}}
+      }
+    }
+  });
+
+  /* PRECIOS GRANOS */
+  charts.precios = new Chart(document.getElementById("ch-precios"), {
+    type: "line",
+    data: {
+      labels: OBSAN_DATA.precios.years,
+      datasets: [
+        { label: "Frijol rojo",    data: OBSAN_DATA.precios.frijol, borderColor: p.cif4,    backgroundColor: "transparent", tension: 0.3, borderWidth: 2.5, pointRadius: 4 },
+        { label: "Maíz blanco",    data: OBSAN_DATA.precios.maiz,   borderColor: p.accent,  backgroundColor: "transparent", tension: 0.3, borderWidth: 2.5, pointRadius: 4 },
+        { label: "Arroz precocido",data: OBSAN_DATA.precios.arroz,  borderColor: p.primary, backgroundColor: "transparent", tension: 0.3, borderWidth: 2.5, pointRadius: 4 }
+      ]
+    },
+    options: { ...defaultChartOptions(p),
+      scales: { ...defaultChartOptions(p).scales,
+        y: { ...defaultChartOptions(p).scales.y, ticks: { ...defaultChartOptions(p).scales.y.ticks, callback: v => "L " + v.toFixed(2)}, beginAtZero: false }}
+    }
+  });
+
+  /* CONCENTRACIÓN granos */
+  charts.concentracion = new Chart(document.getElementById("ch-concentracion"), {
+    type: "doughnut",
+    data: {
+      labels: OBSAN_DATA.concentracion.deptos,
+      datasets: [{ data: OBSAN_DATA.concentracion.pct, backgroundColor: [p.primary, p.accent, p.secondary, "#9C6F0E", p.bgSoft], borderColor: p.bg, borderWidth: 3 }]
+    },
+    options: { ...defaultChartOptions(p),
+      cutout: "62%",
+      scales: {},
+      plugins: { ...defaultChartOptions(p).plugins,
+        legend: { ...defaultChartOptions(p).plugins.legend, position: "right" },
+        tooltip: { ...defaultChartOptions(p).plugins.tooltip, callbacks: { label: c => ` ${c.label}: ${c.raw}%` }}}
+    }
+  });
+
+  /* PRECIOS ÍNDICE */
+  const baseFr = OBSAN_DATA.precios.frijol[0];
+  const baseMz = OBSAN_DATA.precios.maiz[0];
+  const baseAr = OBSAN_DATA.precios.arroz[0];
+  charts.preciosIndice = new Chart(document.getElementById("ch-precios-indice"), {
+    type: "line",
+    data: {
+      labels: OBSAN_DATA.precios.years,
+      datasets: [
+        { label: "Frijol rojo",     data: OBSAN_DATA.precios.frijol.map(v => +(v/baseFr*100).toFixed(1)), borderColor: p.cif4,    backgroundColor: "transparent", tension: 0.3, borderWidth: 2.5, pointRadius: 4 },
+        { label: "Maíz blanco",     data: OBSAN_DATA.precios.maiz.map(v   => +(v/baseMz*100).toFixed(1)), borderColor: p.accent,  backgroundColor: "transparent", tension: 0.3, borderWidth: 2.5, pointRadius: 4 },
+        { label: "Arroz precocido", data: OBSAN_DATA.precios.arroz.map(v  => +(v/baseAr*100).toFixed(1)), borderColor: p.primary, backgroundColor: "transparent", tension: 0.3, borderWidth: 2.5, pointRadius: 4 },
+        { label: "Línea base 100",  data: OBSAN_DATA.precios.years.map(()=>100), borderColor: p.inkMute, borderDash: [4,4], borderWidth: 1, pointRadius: 0 }
+      ]
+    },
+    options: defaultChartOptions(p)
+  });
+
+  /* COMPARACIÓN 1993 vs 2024 — log scale */
+  charts.comparacion = new Chart(document.getElementById("ch-comparacion"), {
+    type: "bar",
+    data: {
+      labels: OBSAN_DATA.comparacionCensos.categorias,
+      datasets: [
+        { label: "1993", data: OBSAN_DATA.comparacionCensos.y1993, backgroundColor: p.inkMute, borderRadius: 4 },
+        { label: "2024", data: OBSAN_DATA.comparacionCensos.y2024, backgroundColor: p.primary, borderRadius: 4 }
+      ]
+    },
+    options: { ...defaultChartOptions(p),
+      scales: { ...defaultChartOptions(p).scales,
+        y: { ...defaultChartOptions(p).scales.y, ticks: { ...defaultChartOptions(p).scales.y.ticks, callback: v => v.toLocaleString()}}}
+    }
+  });
+
+  /* TENENCIA */
+  charts.tenencia = new Chart(document.getElementById("ch-tenencia"), {
+    type: "doughnut",
+    data: {
+      labels: OBSAN_DATA.tenencia.categorias,
+      datasets: [{ data: OBSAN_DATA.tenencia.pct, backgroundColor: [p.primary, p.accent, p.inkMute, p.secondary, "#9C6F0E", "#5C5858"], borderColor: p.bg, borderWidth: 3 }]
+    },
+    options: { ...defaultChartOptions(p), cutout: "55%", scales: {},
+      plugins: { ...defaultChartOptions(p).plugins,
+        legend: { ...defaultChartOptions(p).plugins.legend, position: "right" },
+        tooltip: { ...defaultChartOptions(p).plugins.tooltip, callbacks: { label: c => ` ${c.label}: ${c.raw}%` }}}
+    }
+  });
+
+  /* SEXO */
+  charts.sexo = new Chart(document.getElementById("ch-sexo"), {
+    type: "doughnut",
+    data: {
+      labels: OBSAN_DATA.productorSexo.categorias,
+      datasets: [{ data: OBSAN_DATA.productorSexo.pct, backgroundColor: [p.primary, p.accent, p.secondary], borderColor: p.bg, borderWidth: 3 }]
+    },
+    options: { ...defaultChartOptions(p), cutout: "62%", scales: {},
+      plugins: { ...defaultChartOptions(p).plugins,
+        legend: { ...defaultChartOptions(p).plugins.legend, position: "bottom" },
+        tooltip: { ...defaultChartOptions(p).plugins.tooltip, callbacks: { label: c => ` ${c.label}: ${c.raw}%` }}}
+    }
+  });
+
+  /* EDAD */
+  charts.edad = new Chart(document.getElementById("ch-edad"), {
+    type: "bar",
+    data: {
+      labels: OBSAN_DATA.productorEdad.categorias,
+      datasets: [{ data: OBSAN_DATA.productorEdad.pct, backgroundColor: [p.secondary, p.primary, p.cif3], borderRadius: 4 }]
+    },
+    options: { ...defaultChartOptions(p),
+      indexAxis: "y",
+      plugins: { ...defaultChartOptions(p).plugins, legend: { display: false }},
+      scales: { ...defaultChartOptions(p).scales,
+        x: { ...defaultChartOptions(p).scales.x, ticks: { ...defaultChartOptions(p).scales.x.ticks, callback: v => v + "%"}, max: 100}}
+    }
+  });
+
+  /* EDUCACIÓN */
+  charts.educacion = new Chart(document.getElementById("ch-educacion"), {
+    type: "bar",
+    data: {
+      labels: OBSAN_DATA.productorEducacion.categorias,
+      datasets: [{ data: OBSAN_DATA.productorEducacion.pct, backgroundColor: [p.cif4, p.accent, p.secondary, p.primary, p.inkMute], borderRadius: 4 }]
+    },
+    options: { ...defaultChartOptions(p),
+      plugins: { ...defaultChartOptions(p).plugins, legend: { display: false }},
+      scales: { ...defaultChartOptions(p).scales,
+        y: { ...defaultChartOptions(p).scales.y, ticks: { ...defaultChartOptions(p).scales.y.ticks, callback: v => v + "%"}, max: 100}}
+    }
+  });
+
+  /* CAPACIDADES */
+  charts.capacidades = new Chart(document.getElementById("ch-capacidades"), {
+    type: "bar",
+    data: {
+      labels: OBSAN_DATA.capacidades.indicador,
+      datasets: [{
+        data: OBSAN_DATA.capacidades.pct,
+        backgroundColor: OBSAN_DATA.capacidades.pct.map(v => v > 50 ? p.primary : (v > 20 ? p.accent : p.cif4)),
+        borderRadius: 4
+      }]
+    },
+    options: { ...defaultChartOptions(p),
+      plugins: { ...defaultChartOptions(p).plugins, legend: { display: false }},
+      scales: { ...defaultChartOptions(p).scales,
+        y: { ...defaultChartOptions(p).scales.y, ticks: { ...defaultChartOptions(p).scales.y.ticks, callback: v => v + "%"}, max: 100}}
+    }
+  });
+
+  /* DESNUTRICIÓN */
+  charts.cronica = new Chart(document.getElementById("ch-cronica"), {
+    type: "bar",
+    data: {
+      labels: OBSAN_DATA.desnutricionCronica.categorias,
+      datasets: [{
+        data: OBSAN_DATA.desnutricionCronica.pct,
+        backgroundColor: OBSAN_DATA.desnutricionCronica.pct.map((v,i) => i===0 ? p.primary : (v >= 25 ? p.cif4 : (v >= 15 ? p.cif3 : p.cif2))),
+        borderRadius: 4
+      }]
+    },
+    options: { ...defaultChartOptions(p),
+      indexAxis: "y",
+      plugins: { ...defaultChartOptions(p).plugins, legend: { display: false }},
+      scales: { ...defaultChartOptions(p).scales,
+        x: { ...defaultChartOptions(p).scales.x, ticks: { ...defaultChartOptions(p).scales.x.ticks, callback: v => v + "%"}, max: 40}}
+    }
+  });
+
+  /* ANTROPO EDAD */
+  charts.antropo = new Chart(document.getElementById("ch-antropo"), {
+    type: "line",
+    data: {
+      labels: OBSAN_DATA.antropoEdad.edades,
+      datasets: [
+        { label: "Retraso del crecimiento", data: OBSAN_DATA.antropoEdad.retraso,    borderColor: p.cif4,      backgroundColor: "transparent", tension: 0.35, borderWidth: 2.5, pointRadius: 4 },
+        { label: "Bajo peso",               data: OBSAN_DATA.antropoEdad.bajoPeso,   borderColor: p.accent,    backgroundColor: "transparent", tension: 0.35, borderWidth: 2.5, pointRadius: 4 },
+        { label: "Sobrepeso",               data: OBSAN_DATA.antropoEdad.sobrepeso,  borderColor: p.primary,   backgroundColor: "transparent", tension: 0.35, borderWidth: 2.5, pointRadius: 4 },
+        { label: "Emaciación",              data: OBSAN_DATA.antropoEdad.emaciacion, borderColor: p.secondary, backgroundColor: "transparent", tension: 0.35, borderWidth: 2.5, pointRadius: 4 }
+      ]
+    },
+    options: { ...defaultChartOptions(p),
+      scales: { ...defaultChartOptions(p).scales,
+        x: { ...defaultChartOptions(p).scales.x, title: { display:true, text: "Edad (meses)", color: p.inkMute, font:{size:11}}},
+        y: { ...defaultChartOptions(p).scales.y, ticks: { ...defaultChartOptions(p).scales.y.ticks, callback: v => v + "%"}, max: 25}}
+    }
+  });
+}
+
+/* ============ MAPA HONDURAS (D3) ============ */
+function buildMap(){
+  if (!HN_GEO || !window.d3) return;
+  const svg = d3.select("#hn-map");
+  const tt = document.getElementById("map-tt");
+  svg.selectAll("*").remove();
+
+  const w = 1000, h = 600;
+  const projection = d3.geoIdentity().reflectY(true).fitSize([w, h], HN_GEO);
+  const path = d3.geoPath(projection);
+
+  // Mapa por departamento (combina FM + DC para visualización)
+  const byId = new Map();
+  OBSAN_DATA.cifDeptos.forEach(d => {
+    if (d.id === "hn-fm"){
+      // combinar Distrito Central y Francisco Morazán por población
+      if (!byId.has("hn-fm")) byId.set("hn-fm", { name: "Francisco Morazán + DC", pop: 0, weighted: 0, partes: [] });
+      const acc = byId.get("hn-fm");
+      acc.pop += d.pop;
+      acc.weighted += d.f3plus * d.pop;
+      acc.partes.push(d);
+    } else {
+      byId.set(d.id, { name: d.name, pop: d.pop, f3plus: d.f3plus, fase: d.fase });
+    }
+  });
+  // calcular promedio ponderado FM
+  if (byId.has("hn-fm")){
+    const fm = byId.get("hn-fm");
+    fm.f3plus = +(fm.weighted / fm.pop).toFixed(1);
+    fm.fase = fm.f3plus >= 20 ? 3 : 2;
+  }
+
+  svg.selectAll("path")
+    .data(HN_GEO.features)
+    .join("path")
+    .attr("d", path)
+    .attr("fill", d => {
+      const v = byId.get(d.id);
+      return v ? cifColor(v.f3plus) : "#ccc";
+    })
+    .on("mousemove", (ev, d) => {
+      const v = byId.get(d.id);
+      if (!v) return;
+      const rect = ev.currentTarget.ownerSVGElement.getBoundingClientRect();
+      let html = `<strong>${v.name}</strong><br>${v.f3plus}% en Fase 3+ <br>Población: ${v.pop.toLocaleString("es-HN")}`;
+      if (v.partes){
+        html += `<div class="tt-meta">FM: ${v.partes.find(p=>p.isFM).f3plus}% · DC: ${v.partes.find(p=>p.isDC).f3plus}%</div>`;
+      }
+      tt.innerHTML = html;
+      tt.style.opacity = 1;
+      tt.style.left = (ev.clientX - rect.left + 14) + "px";
+      tt.style.top  = (ev.clientY - rect.top  + 14) + "px";
+    })
+    .on("mouseleave", () => { tt.style.opacity = 0 });
+}
+
+/* ============ TABLA NUTRICIÓN ============ */
+function fillNutricionTable(){
+  const tbody = document.getElementById("tbl-nutricion");
+  tbody.innerHTML = OBSAN_DATA.tablaNutricion.map(r => `
+    <tr>
+      <td>${r.ind}</td>
+      <td class="num">${r.nac === "—" ? "—" : r.nac + "%"}</td>
+      <td class="num">${r.urb === "—" ? "—" : r.urb + "%"}</td>
+      <td class="num">${r.rur === "—" ? "—" : r.rur + "%"}</td>
+      <td class="num">${r.q1  === "—" ? "—" : r.q1  + "%"}</td>
+      <td class="num">${r.q5  === "—" ? "—" : r.q5  + "%"}</td>
+      <td class="num">${r.max}</td>
+      <td class="num">${r.min}</td>
+    </tr>
+  `).join("");
+}
+
+/* ============ REFERENCIAS ============ */
+function fillRefs(){
+  const root = document.getElementById("refs-accordion");
+  if (!root) return;
+
+  // Agrupar referencias por categoría
+  const byCat = REFS.reduce((acc, r) => {
+    (acc[r.cat] = acc[r.cat] || []).push(r);
+    return acc;
+  }, {});
+
+  // Construir un panel del acordeón por cada categoría definida en REF_CATEGORIES
+  root.innerHTML = REF_CATEGORIES
+    .filter(c => byCat[c.id] && byCat[c.id].length)
+    .map((c, idx) => {
+      const items = byCat[c.id]
+        .map(r => `<li>${r.text} ${makeLink(r.url)}</li>`)
+        .join("");
+      const n = byCat[c.id].length;
+      return `
+        <div class="acc-panel${idx === 0 ? ' is-open' : ''}" data-cat="${c.id}">
+          <button class="acc-head" type="button" aria-expanded="${idx === 0 ? 'true' : 'false'}" aria-controls="acc-body-${c.id}">
+            <span class="acc-icon" aria-hidden="true">${c.abbr}</span>
+            <span class="acc-titles">
+              <span class="acc-title">${c.title}</span>
+              <span class="acc-sub">${c.sub}</span>
+            </span>
+            <span class="acc-count">${n} ${n === 1 ? 'referencia' : 'referencias'}</span>
+            <svg class="acc-chevron" viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M6 9l6 6 6-6" stroke="currentColor" stroke-width="2.2" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </button>
+          <div class="acc-body" id="acc-body-${c.id}" role="region">
+            <ol class="acc-refs">${items}</ol>
+          </div>
+        </div>`;
+    }).join("");
+
+  // Actualizar resumen total
+  const summary = document.getElementById("acc-summary");
+  if (summary){
+    const totalCats = REF_CATEGORIES.filter(c => byCat[c.id] && byCat[c.id].length).length;
+    summary.textContent = `${REFS.length} referencias agrupadas en ${totalCats} categorías`;
+  }
+
+  // Listeners de toggle
+  root.querySelectorAll(".acc-head").forEach(btn => {
+    btn.addEventListener("click", () => {
+      const panel = btn.closest(".acc-panel");
+      const open = panel.classList.toggle("is-open");
+      btn.setAttribute("aria-expanded", open ? "true" : "false");
+    });
+  });
+
+  // Botones de control global
+  const expandBtn = document.getElementById("acc-expand");
+  const collapseBtn = document.getElementById("acc-collapse");
+  if (expandBtn){
+    expandBtn.addEventListener("click", () => {
+      root.querySelectorAll(".acc-panel").forEach(p => {
+        p.classList.add("is-open");
+        p.querySelector(".acc-head").setAttribute("aria-expanded", "true");
+      });
+    });
+  }
+  if (collapseBtn){
+    collapseBtn.addEventListener("click", () => {
+      root.querySelectorAll(".acc-panel").forEach(p => {
+        p.classList.remove("is-open");
+        p.querySelector(".acc-head").setAttribute("aria-expanded", "false");
+      });
+    });
+  }
+}
+
+/* ============ EXPORTAR PNG ============ */
+function setupPngExport(){
+  document.querySelectorAll("canvas[data-png]").forEach(c => {
+    c.style.cursor = "default";
+    c.addEventListener("dblclick", () => {
+      const url = c.toDataURL("image/png", 1);
+      const a = document.createElement("a");
+      a.href = url; a.download = c.dataset.png + ".png"; a.click();
+    });
+    c.title = "Doble clic para exportar como PNG";
+  });
+}
+
+/* ============ EXPORTAR CSV ============ */
+function downloadCSV(filename, rows){
+  const csv = rows.map(r => r.map(v => {
+    if (v == null) return "";
+    const s = String(v);
+    return /[",;\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s;
+  }).join(",")).join("\n");
+  const blob = new Blob(["\uFEFF" + csv], { type: "text/csv;charset=utf-8" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url; a.download = filename + ".csv"; a.click();
+  URL.revokeObjectURL(url);
+}
+
+const CSV_BUILDERS = {
+  macro(){
+    const rows = [["Indicador", "2019", "2020", "2021", "2022", "2023", "2024", "2025"]];
+    rows.push(["PIB real (%)", ...OBSAN_DATA.pib.values, ""]);
+    rows.push(["Remesas (M USD)", ...OBSAN_DATA.remesas.monto]);
+    rows.push(["Remesas (% PIB)", ...OBSAN_DATA.remesas.pctPIB]);
+    rows.push(["Inflación (%)", ...OBSAN_DATA.inflacion.general, ""]);
+    return rows;
+  },
+  "cif-serie"(){
+    const rows = [["Período", "Fase 1 (%)", "Fase 2 (%)", "Fase 3 (%)", "Fase 4 (%)", "Fase 5 (%)"]];
+    OBSAN_DATA.cifSerie.forEach(d => rows.push([d.period, d.f1, d.f2, d.f3, d.f4, d.f5]));
+    return rows;
+  },
+  "cif-deptos"(){
+    const rows = [["Departamento", "Población", "% Fase 3+", "% Fase 3", "% Fase 4", "Fase asignada"]];
+    OBSAN_DATA.cifDeptos.forEach(d => rows.push([d.name, d.pop, d.f3plus, d.f3, d.f4, d.fase]));
+    return rows;
+  },
+  precios(){
+    const rows = [["Año", "Frijol rojo (L/lb)", "Maíz blanco (L/lb)", "Arroz precocido (L/lb)"]];
+    OBSAN_DATA.precios.years.forEach((y,i) => {
+      rows.push([y, OBSAN_DATA.precios.frijol[i], OBSAN_DATA.precios.maiz[i], OBSAN_DATA.precios.arroz[i]]);
+    });
+    return rows;
+  },
+  can(){
+    const rows = [["Categoría", "Variable", "Valor (%)"]];
+    OBSAN_DATA.productorSexo.categorias.forEach((c,i)=> rows.push(["Sexo", c, OBSAN_DATA.productorSexo.pct[i]]));
+    OBSAN_DATA.productorEdad.categorias.forEach((c,i)=> rows.push(["Edad", c, OBSAN_DATA.productorEdad.pct[i]]));
+    OBSAN_DATA.productorEducacion.categorias.forEach((c,i)=> rows.push(["Educación", c, OBSAN_DATA.productorEducacion.pct[i]]));
+    OBSAN_DATA.tenencia.categorias.forEach((c,i)=> rows.push(["Tenencia", c, OBSAN_DATA.tenencia.pct[i]]));
+    OBSAN_DATA.capacidades.indicador.forEach((c,i)=> rows.push(["Capacidades", c, OBSAN_DATA.capacidades.pct[i]]));
+    return rows;
+  },
+  nutricion(){
+    const rows = [["Indicador", "Nacional", "Urbano", "Rural", "Q1 más pobre", "Q5 más rico", "Máx. departamental", "Mín. departamental"]];
+    OBSAN_DATA.tablaNutricion.forEach(r => rows.push([r.ind, r.nac, r.urb, r.rur, r.q1, r.q5, r.max, r.min]));
+    return rows;
+  }
+};
+
+function setupCSV(){
+  document.querySelectorAll("[data-csv]").forEach(btn => {
+    btn.addEventListener("click", () => {
+      const key = btn.dataset.csv;
+      const name = btn.dataset.csvName || ("OBSAN_" + key);
+      const builder = CSV_BUILDERS[key];
+      if (builder) downloadCSV(name, builder());
+    });
+  });
+}
+
+/* ============ TOGGLE MAP/BARS ============ */
+function setupToggle(){
+  const btns = document.querySelectorAll(".toggle-btn");
+  const mapW = document.getElementById("map-wrap");
+  const barW = document.getElementById("bars-wrap");
+  btns.forEach(b => b.addEventListener("click", () => {
+    btns.forEach(x => { x.classList.remove("active"); x.setAttribute("aria-pressed", "false"); });
+    b.classList.add("active"); b.setAttribute("aria-pressed", "true");
+    const v = b.dataset.view;
+    mapW.classList.toggle("active", v === "map");
+    barW.classList.toggle("active", v === "bars");
+    if (v === "bars" && charts.cifDeptos) charts.cifDeptos.resize();
+  }));
+}
+
+/* ============ TEMA ============ */
+function setupTheme(){
+  const btn = document.getElementById("btn-theme");
+  const stored = localStorage.getItem("obsan-theme");
+  if (stored === "dark") document.documentElement.setAttribute("data-theme", "dark");
+  else if (window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches){
+    document.documentElement.setAttribute("data-theme", "dark");
+  }
+  btn.addEventListener("click", () => {
+    const cur = document.documentElement.getAttribute("data-theme");
+    const next = cur === "dark" ? "" : "dark";
+    if (next) document.documentElement.setAttribute("data-theme", next);
+    else document.documentElement.removeAttribute("data-theme");
+    localStorage.setItem("obsan-theme", next);
+    setTimeout(() => buildAllCharts(), 50);
+  });
+}
+
+/* ============ NAV ACTIVA ============ */
+function setupNavObserver(){
+  const links = document.querySelectorAll(".nav-link");
+  const sections = Array.from(links).map(l => document.querySelector(l.getAttribute("href")));
+  const obs = new IntersectionObserver(entries => {
+    entries.forEach(e => {
+      if (e.isIntersecting){
+        links.forEach(l => l.classList.remove("active"));
+        const idx = sections.indexOf(e.target);
+        if (idx >= 0) links[idx].classList.add("active");
+      }
+    });
+  }, { rootMargin: "-30% 0px -55% 0px" });
+  sections.forEach(s => s && obs.observe(s));
+}
+
+/* ============ PRINT ============ */
+document.getElementById("btn-print").addEventListener("click", () => window.print());
+
+/* ============ INIT ============ */
+document.addEventListener("DOMContentLoaded", () => {
+  // KPIs
+  renderKpis("kpi-resumen", OBSAN_DATA.kpis);
+  renderKpis("kpi-can", OBSAN_DATA.canKpis);
+
+  // Charts y mapa
+  setupTheme();
+  buildAllCharts();
+  buildMap();
+
+  // Tablas y refs
+  fillNutricionTable();
+  fillRefs();
+
+  // Interacciones
+  setupToggle();
+  setupPngExport();
+  setupCSV();
+  setupNavObserver();
+
+  // Fecha de actualización dinámica
+  const today = new Date();
+  document.getElementById("meta-updated").textContent =
+    "Actualizado: " + today.toISOString().slice(0,10);
+});
+</script>
+</body>
+</html>
+
